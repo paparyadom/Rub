@@ -1,5 +1,12 @@
+import dataclasses
 import os
 from typing import Generator
+import platform
+
+SYSTEM = platform.system()
+DIV = {'Linux': '/',
+       'Windows': '\\'}
+PATH_DIV = DIV[SYSTEM]
 
 
 def is_path(path_or_folder: str) -> bool:
@@ -18,9 +25,9 @@ def walk_around_folder(abs_path: str) -> str:
     return: list of objects as string
     '''
     path, folders, files = next(os.walk(abs_path))
-    objList = ('.F...' + '\n.F...'.join(folders)) if len(folders) != 0 else '...'
-    objList += ('\n.....' + '\n.....'.join(files)) if len(files) != 0 else '\n...'
-    return f'[i] {abs_path} \n{objList}'
+    obj_list = ('.F...' + '\n.F...'.join(folders)) if len(folders) != 0 else '...'
+    obj_list += ('\n.....' + '\n.....'.join(files)) if len(files) != 0 else '\n...'
+    return f'[i] {abs_path} \n{obj_list}'
 
 
 def gen_chunk_read(path_to_file: str, chunk_size: int = 2048) -> Generator:
@@ -44,5 +51,5 @@ def define_abs_path(path_or_folder: str, user_path: str) -> str:
     if is_path(path_or_folder):
         path = path_or_folder
     else:
-        path = user_path + '\\' + path_or_folder
+        path = user_path + PATH_DIV + path_or_folder
     return path

@@ -1,7 +1,7 @@
 import socket
 import struct
 
-HOST = "192.168.16.43"  # The remote host
+HOST = "localhost"  # The remote host
 PORT = 5458  # The same port as used by the servers
 IS_RECONNECT_ENABLED = False
 
@@ -62,5 +62,5 @@ class Client:
 
 if __name__ == '__main__':
     client = Client()
-    client.connect('192.168.16.43', 5458)
+    client.connect('localhost', 5458)
     client.communicate()
