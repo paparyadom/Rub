@@ -5,6 +5,7 @@ HOST = "localhost"  # The remote host
 PORT = 5458  # The same port as used by the servers
 IS_RECONNECT_ENABLED = False
 
+
 class Client:
     def __init__(self):
         self.host = None

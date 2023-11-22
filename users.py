@@ -31,9 +31,6 @@ class UsersHandler:
     def from_user(self, addr: Tuple) -> User:
         return self.active_users[addr]
 
-    def add_user(self, user_name: str):
-        self.active_users.update({user_name: User(user_name)})
-
     def check_user(self, addr: Tuple) -> bool:
         if addr in self.active_users:
             return True
