@@ -1,5 +1,6 @@
 import socket
 import struct
+import os
 
 HOST = "localhost"  # The remote host
 PORT = 5458  # The same port as used by the servers
@@ -22,16 +23,23 @@ class Client:
         while self.connected:
             print(f'[i] connected to {self.host}:{self.port}')
             while True:
-                command = input("[>] type command:")
-                if not command:
-                    command = 'nop'
-                if command == "exit":
-                    self.send_request(command, self.sock)
+                input_command = input("[>] type:")
+                if not input_command:
+                    input_command = 'nop'
+
+                if input_command.startswith('exit'):
+                    self.send_request(input_command)
                     print("[x] close by client")
                     break
-                # Send
-                self.send_request(command, self.sock)
-                # Receive
+                elif input_command.startswith('send'):
+                    try:
+                        self.send_file(input_command)
+                    except Exception as E:
+                        print(E)
+                        input()
+                else:
+                    self.send_request(input_command)
+
                 try:
                     rdata = self.sock.recv(8)
                     (length,) = struct.unpack('>Q', rdata)
@@ -55,13 +63,50 @@ class Client:
             print("[x] client disconnected")
             break
 
-    def send_request(self, command: str, sock: socket.socket):
-        length: bytes = struct.pack('>Q', len(command))
+    def send_request(self, input_command: str):
+        cmd_length: bytes = struct.pack('>Q', len(input_command))
+        length: bytes = struct.pack('>Q', len(input_command) + 8)
+        data_length: bytes = struct.pack('>Q', 0)
+
+        packet = length + cmd_length + data_length + input_command.encode()
+        self.sock.sendall(packet)
+        # self.sock.sendall(length)
+        # self.sock.sendall(cmd_length)
+        # self.sock.sendall(data_length)
+        # self.sock.sendall(input_command.encode())
+
+    def send_file(self, input_command):
+        command, *_from, _to = input_command.split()
+        file_size = os.stat(' '.join(_from))
+
+        with open(' '.join(_from), 'rb') as f:
+            file_data = f.read()
+
+        total_len = len(input_command) + 8 + file_size.st_size
+
+        length = struct.pack('>Q', total_len)
+        cmd_length = struct.pack('>Q', len(input_command))
+        data_length = struct.pack('>Q', file_size.st_size)
+
+        # packet = length + cmd_length + data_length + input_command.encode()
         self.sock.sendall(length)
-        self.sock.sendall(command.encode())
+        self.sock.sendall(cmd_length)
+        self.sock.sendall(data_length)
+        self.sock.sendall(input_command.encode())
+        self.sock.sendall(file_data)
 
 
 if __name__ == '__main__':
-    client = Client()
-    client.connect('localhost', 5458)
-    client.communicate()
+    import sys
+    try:
+        host, port = sys.argv[1:]
+    except:
+        host, port = '', 5458
+    finally:
+        client = Client()
+        client.connect(host,int(port))
+    try:
+        client.communicate()
+    except Exception as E:
+        print(E)
+

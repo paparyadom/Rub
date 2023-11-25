@@ -1,7 +1,6 @@
-import dataclasses
 import os
-from typing import Generator
 import platform
+from typing import Generator, Iterable
 
 SYSTEM = platform.system()
 DIV = {'Linux': '/',
@@ -25,18 +24,17 @@ def walk_around_folder(abs_path: str) -> str:
     return: list of objects as string
     '''
     path, folders, files = next(os.walk(abs_path))
-    obj_list = ('.F...' + '\n.F...'.join(folders)) if len(folders) != 0 else '...'
-    obj_list += ('\n.....' + '\n.....'.join(files)) if len(files) != 0 else '\n...'
+    obj_list = ('folder> .. ' + '\nfolder> .. '.join(folders)) if len(folders) != 0 else '...'
+    obj_list += ('\n>       .. ' + '\n>       .. '.join(files)) if len(files) != 0 else '\n...'
     return f'[i] {abs_path} \n{obj_list}'
 
 
-def gen_chunk_read(path_to_file: str, chunk_size: int = 2048) -> Generator:
+def gen_chunk_read(file_path: str, chunk_size: int = 2048) -> Generator:
     '''
     path_to_file: asbsolute path to file
     chunk_size: size of chunk
     '''
-
-    with open(path_to_file, 'rb') as f:
+    with open(file_path, 'rb') as f:
         while True:
             data = f.read(chunk_size)
             if not data:
@@ -44,12 +42,21 @@ def gen_chunk_read(path_to_file: str, chunk_size: int = 2048) -> Generator:
             yield data
 
 
+
 def define_abs_path(path_or_folder: str, user_path: str) -> str:
     '''
-    define is path_to_folder absolute path or folder in current directory
+    define is path_to_folder absolute path or folder in current user directory
     '''
     if is_path(path_or_folder):
         path = path_or_folder
     else:
         path = user_path + PATH_DIV + path_or_folder
     return path
+
+
+def extract_file_name(file_path: str) -> str:
+    '''
+    extract file name from path to file
+
+    '''
+    return file_path.split(PATH_DIV)[-1]

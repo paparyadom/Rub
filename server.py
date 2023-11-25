@@ -3,6 +3,7 @@ import socket
 import struct
 import sys
 from types import GeneratorType
+from typing import Union, Tuple
 
 import select
 
@@ -23,13 +24,27 @@ class Server:
         self.logger = self.__init_logger()
 
     @staticmethod
-    def __init_socket(host:str, port:int) -> socket.socket:
+    def __init_socket(host: str, port: int) -> socket.socket:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.bind((host, port))
         sock.listen(10)
         return sock
 
+    @staticmethod
+    def __init_logger() -> logging.Logger:
+
+        logger = logging.getLogger(__name__)
+        logger.setLevel(logging.INFO)
+        handler = logging.StreamHandler(stream=sys.stdout)
+        handler.setFormatter(logging.Formatter(fmt='[%(levelname)s] %(message)s'))
+        logger.addHandler(handler)
+        return logger
+
     def run(self):
+        '''
+
+        start file server
+        '''
         self.inputs.append(self.server_socket)
         while True:
             self.logger.info('waiting for connections or data...')
@@ -39,7 +54,7 @@ class Server:
                     sock, addr = self.server_socket.accept()
                     if not self.UserHandler.check_user(addr):
                         self.UserHandler.add_user(addr, sock)
-                    self.logger.info(f'Connected by {addr}')
+                    self.logger.info(f'connected by {addr}')
                     self.inputs.append(sock)
                 else:
                     addr = sock.getpeername()
@@ -49,61 +64,96 @@ class Server:
                         if sock in self.outputs:
                             self.outputs.remove(sock)
                             self.logger.info(f'{addr} was removed from outputs')
-                        sock.close()
+                        self.__close_connection(sock)
 
-    def _handle_query(self, user: User):
-        try:
-            rdata = user.sock.recv(8)
-            (length,) = struct.unpack('>Q', rdata)
-            rdata = b''
-            while len(rdata) < length:
-                to_read = length - len(rdata)
-                print(to_read)
-                rdata += user.sock.recv(
-                    4096 if to_read > 4096 else to_read)
-        except ConnectionError:
-            self.logger.info(f"Client suddenly closed while receiving")
-            return self.CommandHandler.close_connection(user.sock)
-        print(f"Received {rdata} from: {user.addr} length: {length}")
-        if not rdata:
-            self.logger.info("Disconnected by", user.addr)
-            return self.CommandHandler.close_connection(user.sock)
+    def _handle_query(self, user: User) -> bool:
+        '''
+        handle querys from users
+        '''
 
-        answer = self.CommandHandler.handle_input(user, rdata)
-        if isinstance(answer[0], GeneratorType):
-            try:
-                gen, file_size = answer
-                length: bytes = struct.pack('>Q', file_size)
-                user.sock.sendall(length)
-                chunk = next(gen)
-                while chunk:
-                    user.sock.sendall(chunk)
-                    print(chunk)
-                    chunk = next(gen)
-            except StopIteration:
-                self.logger.info('end of file')
-            except ConnectionError:
-                self.logger.info(f"Client suddenly closed, cannot send")
-                return self.CommandHandler.close_connection(user.sock)
+        command, data_length = self.__receive_data(user)
+        if command:
+            output_data = self.CommandHandler.handle_text_command(user, command, data_length)
+            return self.__send_answer(user, output_data)
         else:
-            try:
-                length: bytes = struct.pack('>Q', len(answer))
-                user.sock.send(length)
-                user.sock.send(answer)
-            except ConnectionError:
-                self.logger.info(f"Client suddenly closed, cannot send")
-                return self.CommandHandler.close_connection(user.sock)
-        self.logger.info(f"Send: {answer} to: {user.addr}")
+            return False
+
+    def __receive_data(self, user: User) -> Tuple[bytes, int]:
+        '''
+        try to receive data according to protocol:
+        total length [8 bytes] + command length [8 bytes] + other data length [8 bytes] + data if data length != 0
+
+        '''
+        try:
+            r_total_len = user.sock.recv(8)
+            r_c_length = user.sock.recv(8)
+            r_data_len = user.sock.recv(8)
+            (length,) = struct.unpack('>Q', r_total_len)
+            (cmd_length,) = struct.unpack('>Q', r_c_length)
+            (data_length,) = struct.unpack('>Q', r_data_len)
+            command = user.sock.recv(cmd_length)
+            if command.startswith(b'exit'):
+                command = b''
+        except Exception as E:
+                self.logger.info(f'something went wrong {E}')
+                return b'', 0
+
+        except ConnectionError:
+            self.logger.info(f'client suddenly closed connection')
+            return b''
+        self.logger.info(f'received {command} from: {user.addr} length: {length}')
+        if not command:
+            self.logger.info(f'disconnected by, {user.addr}')
+        return command, data_length
+
+    def __send_answer(self, user: User, output_data: Union[GeneratorType, bytes]) -> bool:
+        '''
+        send text answer or file as bytes to user
+        output_data is bytes for text answer
+        or
+        <class 'generator'> if need to send file
+
+        '''
+        if isinstance(output_data[0], GeneratorType):
+            self.__send_file(user, output_data)
+        else:
+            self.__send_text(user, output_data)
         return True
 
-    @staticmethod
-    def __init_logger() -> logging.Logger:
-        logger = logging.getLogger(__name__)
-        logger.setLevel(logging.INFO)
-        handler = logging.StreamHandler(stream=sys.stdout)
-        handler.setFormatter(logging.Formatter(fmt='[%(levelname)s] %(message)s'))
-        logger.addHandler(handler)
-        return logger
+    def __send_file(self, user: User, data):
+        '''
+
+        send file as bytes to user by generator
+        '''
+        try:
+            gen, file_size = data
+            length: bytes = struct.pack('>Q', file_size)
+            user.sock.sendall(length)
+            chunk = next(gen)
+            while chunk:
+                user.sock.sendall(chunk)
+                print(chunk)
+                chunk = next(gen)
+        except StopIteration:
+            self.logger.info('EOF')
+        except ConnectionError:
+            self.logger.info(f'client suddenly closed, can not send')
+        self.logger.info(f'send: {data} to: {user.addr}')
+
+    def __send_text(self, user: User, data: bytes):
+        '''
+        send text as bytes to user
+        '''
+        try:
+            length: bytes = struct.pack('>Q', len(data))
+            user.sock.send(length)
+            user.sock.send(data)
+        except ConnectionError:
+            self.logger.info(f'client suddenly closed, can not send')
+        self.logger.info(f'send: {data} to: {user.addr}')
+
+    def __close_connection(self, user_sock: socket.socket):
+        user_sock.close()
 
 
 if __name__ == '__main__':
@@ -111,6 +161,6 @@ if __name__ == '__main__':
         host, port = sys.argv[1:]
         server = Server(host, port)
     except:
-        host, port = '', 5458
-        server = Server(host, port)
+        host, port = '', 5461
+        server = Server(host, int(port))
     server.run()
