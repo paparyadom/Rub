@@ -4,12 +4,17 @@ import socket
 from uuid import uuid1
 
 
+
+
+
+
 class User:
     def __init__(self, user_id: int, addr, sock):
         self.__id = user_id
+        self.__current_path = os.getcwd()
+        self.__permissions = None
         self.__sock = sock
         self.__addr = addr
-        self.__current_path = os.getcwd()
 
     @property
     def current_path(self):
@@ -21,12 +26,21 @@ class User:
         self.__current_path = path
 
     @property
+    def permissions(self):
+        return self.__permissions
+
+    @permissions.setter
+    def permissions(self, permissions):
+        self.__permissions = permissions
+
+    @property
     def sock(self):
         return self.__sock
 
     @property
     def addr(self):
         return self.__addr
+
 
 
 class UsersHandler:
