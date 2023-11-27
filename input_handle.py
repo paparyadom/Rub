@@ -4,6 +4,7 @@ from typing import Tuple, Generator, NamedTuple, Dict, Callable
 
 import utility
 from users import User
+import pickle
 
 
 class Packet(NamedTuple):
@@ -65,7 +66,7 @@ def _cmd_get_list_of_files(user: User, packet: Packet = None) -> bytes:
 def _cmd_create_folder(user: User, packet: Packet) -> bytes:
     '''
     nefo - create folder in current path in case of packet.cmd_tail == 0 (e.g. got 'nefo newfolder')
-            or in path from packet (e.g. got 'nefo D:\newfolder')
+            or in path from packet (e.g. got 'nefo D:\\newfolder')
     '''
 
     if packet.cmd_tail:
@@ -104,9 +105,10 @@ def _cmd_delete_folder(user: User, packet: Packet) -> bytes:
 
 def _cmd_delete_file(user: User, packet: Packet) -> bytes:
     '''
-    defo
-    :param data:
-    :return:
+    defi - delete by absolute path or in current folder.
+           Use absolute path (e.g. defi D:\\file or defi /home/file)
+           or relative path (e.g. defi file)
+
     '''
 
     if packet.cmd_tail:
@@ -127,7 +129,6 @@ def _cmd_save_file(user: User, packet: Packet) -> bytes:
 
     '''
     _from, _to = packet.cmd_tail
-
 
     if _to == 'here':
         path_to_save = user.current_path + utility.PATH_DIV + utility.extract_file_name(_from)
@@ -161,7 +162,7 @@ def _cmd_get_help(packet: Packet, user: User = None) -> bytes:
             res = commands[command]['cmd'].__doc__
         else:
             res = 'no help for you'
-        return repr(res).encode()
+        return res.encode()
     else:
         return short_help.encode() or '[!] No help for you'
 
@@ -172,21 +173,22 @@ def _cmd_change_folder(user: User, packet: Packet) -> bytes:
            or jump folder
     '''
     if not packet.cmd_tail:
-        res = f'[!] got empty path to folder'
+        path = utility.jump_up(user.current_path)
     else:
         path = utility.define_abs_path(packet.cmd_tail[0], user.current_path)
-        if os.path.exists(path) and os.path.isdir(path):
-            user.current_path = path
-            res = f'[i] path changed to {path}'
-        else:
-            res = f'[!] no such folder {path}'
+
+    if os.path.exists(path) and os.path.isdir(path):
+        user.current_path = path
+        res = f'[i] path changed to {path}'
+    else:
+        res = f'[!] no such folder {path}'
     return res.encode()
 
 
 def _cmd_get_info(user: User, packet: Packet, ) -> bytes:
     '''
-    info - get information about folder (e.g info 'D:\folder or info /home/folder)
-           or about file (e.g. info 'D:\folder\file or info /home/file)
+    info - get information about folder (e.g info 'D:\\folder or info /home/folder)
+           or about file (e.g. info 'D:\\folder\\file or info /home/file)
     '''
     if not packet.cmd_tail:
         res = f'[!] empty filepath'

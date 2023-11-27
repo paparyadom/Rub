@@ -1,6 +1,6 @@
 import os
 import platform
-from typing import Generator, Iterable
+from typing import Generator
 
 SYSTEM = platform.system()
 DIV = {'Linux': '/',
@@ -42,7 +42,6 @@ def gen_chunk_read(file_path: str, chunk_size: int = 2048) -> Generator:
             yield data
 
 
-
 def define_abs_path(path_or_folder: str, user_path: str) -> str:
     '''
     define is path_to_folder absolute path or folder in current user directory
@@ -60,3 +59,10 @@ def extract_file_name(file_path: str) -> str:
 
     '''
     return file_path.split(PATH_DIV)[-1]
+
+
+def jump_up(path: str) -> str:
+    splitted_path = path.split(PATH_DIV)
+    new_path = PATH_DIV.join(splitted_path[:-1])
+
+    return new_path if new_path[-1] != ':' else new_path + PATH_DIV

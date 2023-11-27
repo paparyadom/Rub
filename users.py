@@ -5,20 +5,34 @@ from uuid import uuid1
 
 
 class User:
-    def __init__(self, userName, addr, sock):
-        self.name = userName
-        self.sock = sock
-        self.addr = addr
-        self.current_path = os.getcwd()
+    def __init__(self, user_id: int, addr, sock):
+        self.__id = user_id
+        self.__sock = sock
+        self.__addr = addr
+        self.__current_path = os.getcwd()
 
-    def set_current_path(self, path: str):
-        self.current_path = path
+    @property
+    def current_path(self):
+        return self.__current_path
+
+    @current_path.setter
+    def current_path(self, path: str):
+        print('path was changed')
+        self.__current_path = path
+
+    @property
+    def sock(self):
+        return self.__sock
+
+    @property
+    def addr(self):
+        return self.__addr
 
 
 class UsersHandler:
     def __init__(self):
-        self.active_users: Dict[Tuple, User] = dict()
-        self.authenticated = set()
+        self.__active_users: Dict[Tuple, User] = dict()
+        self.__authenticated = set()
 
     # def check_auth(self, sock) -> bool:
     #     return True if sock in self.authenticated else False
@@ -29,12 +43,12 @@ class UsersHandler:
     #     return USERS[userName]
 
     def from_user(self, addr: Tuple) -> User:
-        return self.active_users[addr]
+        return self.__active_users[addr]
 
     def check_user(self, addr: Tuple) -> bool:
-        if addr in self.active_users:
+        if addr in self.__active_users:
             return True
         return False
 
     def add_user(self, addr: Tuple, sock: socket.socket):
-        self.active_users[addr] = User(userName=uuid1, addr=addr, sock=sock)
+        self.__active_users[addr] = User(user_id=uuid1, addr=addr, sock=sock)

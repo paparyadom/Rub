@@ -1,4 +1,5 @@
 import logging
+import pickle
 import socket
 import struct
 import sys
@@ -68,9 +69,8 @@ class Server:
 
     def _handle_query(self, user: User) -> bool:
         '''
-        handle querys from users
+        handle queries from users
         '''
-
         command, data_length = self.__receive_data(user)
         if command:
             output_data = self.CommandHandler.handle_text_command(user, command, data_length)
@@ -156,11 +156,26 @@ class Server:
         user_sock.close()
 
 
+# def input_stup(server: Server):
+#     while True:
+#         print('i am alive')
+#         bb = input('write something')
+#         if bb == 'exit':
+#             server.stop_server()
+#
+#         print(bb)
+
 if __name__ == '__main__':
+    import threading
     try:
         host, port = sys.argv[1:]
         server = Server(host, port)
     except:
-        host, port = '', 5461
+        host, port = '', 5460
         server = Server(host, int(port))
-    server.run()
+    serv = threading.Thread(target=server.run)
+    # other = threading.Thread(target=input_stup, args=(server,))
+    # other.start()
+    serv.start()
+
+
