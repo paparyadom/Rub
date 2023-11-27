@@ -1,5 +1,4 @@
 import logging
-import pickle
 import socket
 import struct
 import sys
@@ -11,6 +10,9 @@ import select
 from input_handle import InputsHandler
 from users import User
 from users import UsersHandler
+
+# '628c93f2-8d44-11ee-9706-07b2e7b92ea1'
+userdict = {}
 
 
 class Server:
@@ -48,13 +50,12 @@ class Server:
         '''
         self.inputs.append(self.server_socket)
         while True:
-            self.logger.info('waiting for connections or data...')
+            self.logger.info(f'({self.host}:{self.port}) waiting for connections or data...')
             readable, writeable, exceptional = select.select(self.inputs, self.outputs, self.inputs)
             for sock in readable:
                 if sock is self.server_socket:
                     sock, addr = self.server_socket.accept()
-                    if not self.UserHandler.check_user(addr):
-                        self.UserHandler.add_user(addr, sock)
+                    self.UserHandler.check_user(addr, sock)
                     self.logger.info(f'connected by {addr}')
                     self.inputs.append(sock)
                 else:
@@ -95,8 +96,8 @@ class Server:
             if command.startswith(b'exit'):
                 command = b''
         except Exception as E:
-                self.logger.info(f'something went wrong {E}')
-                return b'', 0
+            self.logger.info(f'something went wrong {E}')
+            return b'', 0
 
         except ConnectionError:
             self.logger.info(f'client suddenly closed connection')
@@ -152,30 +153,21 @@ class Server:
             self.logger.info(f'client suddenly closed, can not send')
         self.logger.info(f'send: {data} to: {user.addr}')
 
+    @staticmethod
     def __close_connection(self, user_sock: socket.socket):
         user_sock.close()
 
 
-# def input_stup(server: Server):
-#     while True:
-#         print('i am alive')
-#         bb = input('write something')
-#         if bb == 'exit':
-#             server.stop_server()
-#
-#         print(bb)
-
 if __name__ == '__main__':
     import threading
+
     try:
         host, port = sys.argv[1:]
         server = Server(host, port)
     except:
-        host, port = '', 5460
+        host, port = 'localhost', 5454
         server = Server(host, int(port))
     serv = threading.Thread(target=server.run)
     # other = threading.Thread(target=input_stup, args=(server,))
     # other.start()
     serv.start()
-
-

@@ -2,10 +2,7 @@ import socket
 import struct
 import os
 
-HOST = "localhost"  # The remote host
-PORT = 5458  # The same port as used by the servers
-IS_RECONNECT_ENABLED = False
-
+UUID = '628c93f2-8d44-11ee-9706-07b2e7b92ea1'
 
 class Client:
     def __init__(self):
@@ -22,8 +19,9 @@ class Client:
     def communicate(self):
         while self.connected:
             print(f'[i] connected to {self.host}:{self.port}')
+            self.__auth()
             while True:
-                input_command = input("[>] type:")
+                input_command = input("[...] type:")
                 if not input_command:
                     input_command = 'nop'
 
@@ -94,6 +92,12 @@ class Client:
         self.sock.sendall(data_length)
         self.sock.sendall(input_command.encode())
         self.sock.sendall(file_data)
+
+    def __auth(self):
+        auth = self.sock.recv(1024)
+        print(auth.decode())
+        self.sock.sendall(UUID.encode())
+
 
 
 if __name__ == '__main__':

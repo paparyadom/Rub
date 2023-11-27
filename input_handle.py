@@ -21,7 +21,7 @@ def _cmd_get_current_folder(user: User, packet: Packet = None) -> bytes:
     '''
     Send command 'where' for getting your current path
     '''
-    return f'[i] you are now in {user.current_path}'.encode()
+    return f'[>] you are now in {user.current_path}'.encode()
 
 
 def _cmd_open_file(user: User, packet: Packet) -> Tuple[Generator, int] | bytes:
@@ -75,8 +75,8 @@ def _cmd_create_folder(user: User, packet: Packet) -> bytes:
             try:
                 os.mkdir(path)
             except Exception as E:
-                return f'[e] something went wrong {E}'.encode()
-            res = f'[i] successfully created folder "{path}"'
+                return f'[err] something went wrong {E}'.encode()
+            res = f'[>] successfully created folder "{path}"'
         else:
             res = f'[!] path "{path}" is already exists'
     else:
@@ -96,8 +96,8 @@ def _cmd_delete_folder(user: User, packet: Packet) -> bytes:
         try:
             os.rmdir(path)
         except Exception as E:
-            return f'[e] something went wrong {E}'.encode()
-        res = f'[i] successfully deleted folder "{path}"'
+            return f'[err] something went wrong {E}'.encode()
+        res = f'[>] successfully deleted folder "{path}"'
     else:
         res = f'[!] empty path'
     return res.encode()
@@ -116,8 +116,8 @@ def _cmd_delete_file(user: User, packet: Packet) -> bytes:
         try:
             os.remove(path)
         except Exception as E:
-            return f'[e] something went wrong {E}'.encode()
-        res = f'[i] successfully deleted file "{path}"'
+            return f'[err] something went wrong {E}'.encode()
+        res = f'[>] successfully deleted file "{path}"'
     else:
         res = f'[!] empty path to file'
     return res.encode()
@@ -144,7 +144,7 @@ def _cmd_save_file(user: User, packet: Packet) -> bytes:
             f.write(data)
             already_read += len(data)
 
-    return f'[i] file was successfully saved to "{path_to_save}" '.encode()
+    return f'[>] file was successfully saved to "{path_to_save}" '.encode()
 
 
 def _cmd_get_help(packet: Packet, user: User = None) -> bytes:
@@ -154,14 +154,14 @@ def _cmd_get_help(packet: Packet, user: User = None) -> bytes:
 
     short_help = 'Avaliable commands:\n'
     for command, note in commands.items():
-        short_help += f'{command}{note["note"]}\n'
+        short_help += f'- {command}{note["note"]}\n'
 
     if packet.cmd_tail:
         command = packet.cmd_tail[0]
         if (command in commands) and (commands[command].__doc__ is not None):
             res = commands[command]['cmd'].__doc__
         else:
-            res = 'no help for you'
+            res = ' no help for you :('
         return res.encode()
     else:
         return short_help.encode() or '[!] No help for you'
@@ -179,7 +179,7 @@ def _cmd_change_folder(user: User, packet: Packet) -> bytes:
 
     if os.path.exists(path) and os.path.isdir(path):
         user.current_path = path
-        res = f'[i] path changed to {path}'
+        res = f'[>] path changed to {path}'
     else:
         res = f'[!] no such folder {path}'
     return res.encode()
@@ -205,7 +205,7 @@ def _cmd_get_info(user: User, packet: Packet, ) -> bytes:
                    f'Last accessed: {time.ctime(stat.st_atime)}'
                    )
         except Exception as e:
-            res = f'[Err] something went wrong {e}'
+            res = f'[err] something went wrong {e}'
 
     return res.encode()
 

@@ -26,7 +26,7 @@ def walk_around_folder(abs_path: str) -> str:
     path, folders, files = next(os.walk(abs_path))
     obj_list = ('folder> .. ' + '\nfolder> .. '.join(folders)) if len(folders) != 0 else '...'
     obj_list += ('\n>       .. ' + '\n>       .. '.join(files)) if len(files) != 0 else '\n...'
-    return f'[i] {abs_path} \n{obj_list}'
+    return f'[>] {abs_path} \n{obj_list}'
 
 
 def gen_chunk_read(file_path: str, chunk_size: int = 2048) -> Generator:
