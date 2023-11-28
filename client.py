@@ -1,8 +1,10 @@
+import os
 import socket
 import struct
-import os
 
-UUID = '628c93f2-8d44-11ee-9706-07b2e7b92ea1'
+# UUID = '628c93f2-8d44-11ee-9706-07b2e7b92ea1'
+# UUID = 'foo-bar-baz'
+UUID = 'foo'
 
 class Client:
     def __init__(self):
@@ -41,7 +43,6 @@ class Client:
                 try:
                     rdata = self.sock.recv(8)
                     (length,) = struct.unpack('>Q', rdata)
-                    print(f'awaiting {length} bytes')
                     data = b''
                     to_read = length - len(data)
                     data += self.sock.recv(4096 if to_read > 4096 else to_read)
@@ -94,23 +95,22 @@ class Client:
         self.sock.sendall(file_data)
 
     def __auth(self):
-        auth = self.sock.recv(1024)
+        auth = self.sock.recv(4)
         print(auth.decode())
         self.sock.sendall(UUID.encode())
 
 
-
 if __name__ == '__main__':
     import sys
+
     try:
         host, port = sys.argv[1:]
     except:
         host, port = '', 5458
     finally:
         client = Client()
-        client.connect(host,int(port))
+        client.connect(host, int(port))
     try:
         client.communicate()
     except Exception as E:
         print(E)
-

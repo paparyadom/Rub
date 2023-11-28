@@ -1,4 +1,5 @@
 import logging
+import os
 import socket
 import struct
 import sys
@@ -11,8 +12,8 @@ from input_handle import InputsHandler
 from users import User
 from users import UsersHandler
 
-# '628c93f2-8d44-11ee-9706-07b2e7b92ea1'
-userdict = {}
+if not os.path.exists('storage'):
+    os.mkdir('storage')
 
 
 class Server:
@@ -63,6 +64,7 @@ class Server:
                     if not self._handle_query(self.UserHandler.from_user(addr)):
                         self.inputs.remove(sock)
                         self.logger.info(f'{addr} was removed from inputs')
+                        self.UserHandler.end_user_session(addr)
                         if sock in self.outputs:
                             self.outputs.remove(sock)
                             self.logger.info(f'{addr} was removed from outputs')
@@ -154,7 +156,7 @@ class Server:
         self.logger.info(f'send: {data} to: {user.addr}')
 
     @staticmethod
-    def __close_connection(self, user_sock: socket.socket):
+    def __close_connection(user_sock: socket.socket):
         user_sock.close()
 
 

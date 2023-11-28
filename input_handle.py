@@ -1,4 +1,5 @@
 import os
+import stat
 import time
 from typing import Tuple, Generator, NamedTuple, Dict, Callable
 
@@ -195,19 +196,22 @@ def _cmd_get_info(user: User, packet: Packet, ) -> bytes:
     else:
         file_path = utility.define_abs_path(packet.cmd_tail[0], user.current_path)
         try:
-            stat = os.stat(file_path)
+            status = os.stat(file_path)
             res = (f'{file_path} info:\n\t'
-                   f'Size: {stat.st_size} bytes\n\t'
-                   f'Permissions:{oct(stat.st_mode)}\n\t'
-                   f'Owner:{stat.st_uid}\n\t'
-                   f'Created: {time.ctime(stat.st_ctime)}\n\t'
-                   f'Last modified: {time.ctime(stat.st_mtime)}\n\t'
-                   f'Last accessed: {time.ctime(stat.st_atime)}'
+                   f'Size: {status.st_size} bytes\n\t'
+                   f'Permissions:{stat.filemode(status.st_mode)}\n\t'
+                   f'Owner:{status.st_uid}\n\t'
+                   f'Created: {time.ctime(status.st_ctime)}\n\t'
+                   f'Last modified: {time.ctime(status.st_mtime)}\n\t'
+                   f'Last accessed: {time.ctime(status.st_atime)}'
                    )
         except Exception as e:
             res = f'[err] something went wrong {e}'
 
     return res.encode()
+
+def _cmd_who(user: User, packet: Packet = None) -> bytes:
+    return user.get_full_info().encode()
 
 
 commands: Dict[str, Dict[str, Callable | str]] = \
@@ -230,8 +234,10 @@ commands: Dict[str, Dict[str, Callable | str]] = \
      'jump': {'cmd': _cmd_change_folder,
               'note': ' - change path'},
      'help': {'cmd': _cmd_get_help,
-              'note': ' - this list'}
-     }
+              'note': ' - this list'},
+     'whoami' : {'cmd' : _cmd_who,
+                 'note' : ' - your info'}
+      }
 
 
 class InputsHandler:
