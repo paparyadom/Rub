@@ -1,11 +1,9 @@
 import os
-import platform
 from typing import Generator
-#
-# SYSTEM = platform.system()
-# DIV = {'Linux': '/',
-#        'Windows': '\\'}
+
+
 PATH_DIV = os.sep
+
 
 
 def is_path(path_or_folder: str) -> bool:

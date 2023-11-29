@@ -1,5 +1,6 @@
 *.txt
 /.idea
+/storage
 __*
 tets.py
 *.MP4

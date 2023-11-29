@@ -5,7 +5,6 @@ from typing import Tuple, Generator, NamedTuple, Dict, Callable
 
 import utility
 from users import User
-import pickle
 
 
 class Packet(NamedTuple):
@@ -135,7 +134,6 @@ def _cmd_save_file(user: User, packet: Packet) -> bytes:
         path_to_save = user.current_path + utility.PATH_DIV + utility.extract_file_name(_from)
     else:
         path_to_save = _to + utility.PATH_DIV + utility.extract_file_name(_from)
-    print(path_to_save)
 
     with open(path_to_save, 'wb') as f:
         already_read = 0
@@ -176,7 +174,10 @@ def _cmd_change_folder(user: User, packet: Packet) -> bytes:
     if not packet.cmd_tail:
         path = utility.jump_up(user.current_path)
     else:
-        path = utility.define_abs_path(packet.cmd_tail[0], user.current_path)
+        if packet.cmd_tail[0].startswith('home'):
+            path = user.home_path
+        else:
+            path = utility.define_abs_path(packet.cmd_tail[0], user.current_path)
 
     if os.path.exists(path) and os.path.isdir(path):
         user.current_path = path
