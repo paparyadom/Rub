@@ -35,8 +35,6 @@ class TCD8(BaseProtocol):
             (cmd_length,) = struct.unpack('>Q', r_c_length)
             (data_length,) = struct.unpack('>Q', r_data_len)
             command = usock.recv(cmd_length)
-            if command.startswith(b'exit'):
-                command = b''
         except Exception as E:
             print(f'[x] something went wrong {E}')
             return failed_recv
@@ -60,7 +58,7 @@ class TCD8(BaseProtocol):
             usock.send(length)
             usock.send(data)
         except ConnectionError:
-            print(f'client suddenly closed, can not send')
+            print(f'[x] client suddenly closed, can not send')
         print(f'...>> {data} to: {addr}')
 
     def send_file(self, usock: socket.socket, data: bytes):

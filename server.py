@@ -7,10 +7,11 @@ from typing import Union
 
 import select
 
+from Saveloader.SaveLoader import JsonSaveLoader
+from InputHandler import InputsHandler
 from Protocols.BaseProtocol import TCD8
-from input_handle import InputsHandler
 from users import User
-from users import UsersSessionHandler
+from Session.SessionHandler import UsersSessionHandler
 
 if not os.path.exists('storage'):
     os.mkdir('storage')
@@ -22,10 +23,13 @@ class Server:
         self.port = port
         self.outputs = []
         self.inputs = []
+
         self.server_socket = self.__init_socket(self.host, self.port)
         self.logger = self.__init_logger()
+
         self.CommandHandler = InputsHandler()
-        self.UsersSessionHandler = UsersSessionHandler()
+        self.UserDataHandler = JsonSaveLoader(storage_path='storage')
+        self.UsersSessionHandler = UsersSessionHandler(self.UserDataHandler)
         self.Proto = TCD8()
 
     def run(self):
@@ -59,7 +63,7 @@ class Server:
         handle queries from users
         '''
         qstatus, command, data_length = self.Proto.receive_data(user.sock)
-        if command:
+        if command and command != b'exit':
             output_data = self.CommandHandler.handle_text_command(user, command, data_length)
             return self.__handle_answer(user, output_data)
         else:
@@ -107,9 +111,6 @@ if __name__ == '__main__':
         host, port = sys.argv[1:]
         server = Server(host, port)
     except:
-        host, port = 'localhost', 5455
+        host, port = 'localhost', 5454
         server = Server(host, int(port))
-    serv = threading.Thread(target=server.run)
-    # other = threading.Thread(target=input_stup, args=(server,))
-    # other.start()
-    serv.start()
+    server.run()

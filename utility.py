@@ -1,5 +1,5 @@
 import os
-from typing import Generator
+from typing import Generator, Tuple
 
 
 PATH_DIV = os.sep
@@ -16,7 +16,7 @@ def is_path(path_or_folder: str) -> bool:
     return True if any(symbol in path_or_folder for symbol in symbols) else False
 
 
-def walk_around_folder(abs_path: str) -> str:
+def walk_around_folder(abs_path: str, as_str: bool = True) -> str | Tuple:
     '''
     abs_path: absolute path to file
     return: list of objects as string
@@ -24,7 +24,7 @@ def walk_around_folder(abs_path: str) -> str:
     path, folders, files = next(os.walk(abs_path))
     obj_list = ('folder> .. ' + '\nfolder> .. '.join(folders)) if len(folders) != 0 else '...'
     obj_list += ('\n>       .. ' + '\n>       .. '.join(files)) if len(files) != 0 else '\n...'
-    return f'[>] {abs_path} \n{obj_list}'
+    return f'[>] {abs_path} \n{obj_list}' if as_str else (path, folders, files)
 
 
 def gen_chunk_read(file_path: str, chunk_size: int = 2048) -> Generator:
@@ -64,3 +64,11 @@ def jump_up(path: str) -> str:
     new_path = PATH_DIV.join(splitted_path[:-1])
 
     return new_path if new_path[-1] != ':' else new_path + PATH_DIV
+
+
+def is_avaliable_folder(folder_path: str):
+    '''
+    check if user has permission to folder
+    :return:
+    '''
+    raise NotImplemented

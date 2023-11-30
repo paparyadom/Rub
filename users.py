@@ -1,11 +1,12 @@
 import socket
 from typing import Dict, Tuple
 
-from Saveloader.SaveLoader import JsonSaveLoader, UserData
+import Saveloader
+from Saveloader.SaveLoader import JsonSaveLoader
 
 
 class User:
-    def __init__(self, uid: str, addr, sock, current_path: str,  permissions: Dict = dict(), home_path: str = None, ):
+    def __init__(self, uid: str, addr: Tuple, sock:socket.socket, current_path: str, permissions: Dict = {'*':'*'}, home_path: str = None, ):
         self.__id = uid
         self.__current_path = current_path
         self.__home_path = home_path
@@ -59,55 +60,13 @@ class User:
         return info
 
 
-class UsersSessionHandler:
-    '''
-    This handler is used for process users:
-    <function 'check_user'> - handles incoming user. This function calls in series follow function:
-        <function '__recv_user_id'> - getting user id from user
-        <function '__UserDataHandler.is_new_user'> - check if this new user or we already have data about
-            <function '__UserDataHandler.create_user'> - if it is new user - creates user folder and json data
-                                                         return instance of class User
-            <function '__UserDataHandler.load_user'> - if we already have data about this user - loads user data from
-                                                       user path in folder 'storage/user id'
-                                                       return instance of class User with parameters from json file
-        <function '__add_user_to_session'> - adds user to  dict  __active_users = Dict[addr, User instance]
+class SuperUser(User):
+    def __init__(self, DataHandler: Saveloader.SaveLoader, **kwargs):
+        super().__init__(**kwargs)
+        self._DataHandler = DataHandler
+        self.permissions = {'/': '/'}
 
-    <function '__UserDataHandler.save_user_data'> - if session is closed - delete user from __active_users and save user data
-                                                    to json file
-     '''
 
-    def __init__(self):
-        self.__active_users: Dict[Tuple, User] = dict()
-        self.__UserDataHandler = JsonSaveLoader('storage')
-
-    def from_user(self, addr: Tuple) -> User:
-        return self.__active_users[addr]
-
-    def check_user(self, addr: Tuple, sock: socket.socket):
-        if addr not in self.__active_users:
-            uid: str = self.__recv_user_id(sock)
-            if self.__UserDataHandler.is_new_user(uid):
-                udata = self.__UserDataHandler.create_user(uid)
-            else:
-                udata = self.__UserDataHandler.load_user(uid)
-            self.__add_user_to_session(addr, sock, udata)
-
-    def __add_user_to_session(self, addr: Tuple, sock: socket.socket, udata: UserData):
-        self.__active_users[addr] = User(uid=udata.uid,
-                                         permissions=udata.permissions,
-                                         current_path=udata.current_path,
-                                         home_path=udata.home_path,
-                                         sock=sock,
-                                         addr=addr)
-
-    @staticmethod
-    def __recv_user_id(user_socket: socket.socket) -> str:
-        user_socket.sendall('id?'.encode())
-        user_id = user_socket.recv(128)
-        return user_id.decode()
-
-    def end_user_session(self, addr: Tuple):
-        user = self.__active_users[addr]
-        udata = UserData(user.uid, user.current_path, user.permissions, user.home_path)
-        self.__UserDataHandler.save_user_data(udata)
-        self.__active_users.pop(addr)
+    @property
+    def DataHandler(self):
+        return self._DataHandler

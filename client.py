@@ -3,7 +3,7 @@ import socket
 import struct
 
 # UUID = '628c93f2-8d44-11ee-9706-07b2e7b92ea1'
-UUID = 'foo-bar-baz'
+UUID = 'superuser'
 # UUID = 'foo'
 
 class Client:
@@ -75,10 +75,11 @@ class Client:
         # self.sock.sendall(input_command.encode())
 
     def send_file(self, input_command):
-        command, *_from, _to = input_command.split()
-        file_size = os.stat(' '.join(_from))
+        command, _from, *_to = input_command.split()
+        print(input_command)
+        file_size = os.stat(_from)
 
-        with open(' '.join(_from), 'rb') as f:
+        with open(_from, 'rb') as f:
             file_data = f.read()
 
         total_len = len(input_command) + 8 + file_size.st_size
