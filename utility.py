@@ -1,11 +1,12 @@
 import os
 from typing import Generator, Tuple
-
+from pathlib import Path
+from pip._internal.utils.deprecation import deprecated
 
 PATH_DIV = os.sep
 
 
-
+# deprecated(reason='Now used Path(path).is_absolute()', replacement='Path().is_absolute()', gone_in='unknown')
 def is_path(path_or_folder: str) -> bool:
     '''
     check if path_to_folder is path. Use to avoid path like 'D:' in Windows OS when
@@ -40,14 +41,14 @@ def gen_chunk_read(file_path: str, chunk_size: int = 2048) -> Generator:
             yield data
 
 
-def define_abs_path(path_or_folder: str, user_path: str) -> str:
+def define_path(path_or_folder: str, user_path: str) -> str:
     '''
     define is path_to_folder absolute path or folder in current user directory
     '''
-    if is_path(path_or_folder):
+    if Path(path_or_folder).is_absolute():
         path = path_or_folder
     else:
-        path = user_path + PATH_DIV + path_or_folder
+        path = Path().joinpath(user_path, path_or_folder)
     return path
 
 
@@ -58,7 +59,7 @@ def extract_file_name(file_path: str) -> str:
     '''
     return file_path.split(PATH_DIV)[-1]
 
-
+# deprecated
 def jump_up(path: str) -> str:
     splitted_path = path.split(PATH_DIV)
     new_path = PATH_DIV.join(splitted_path[:-1])

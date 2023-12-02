@@ -1,8 +1,10 @@
-import os
+import abc
 import stat
 import time
-from typing import Tuple, Generator, NamedTuple
 from pathlib import Path
+from typing import Tuple, Generator, NamedTuple
+
+
 import utility
 from users import User
 
@@ -20,14 +22,14 @@ class Packet(NamedTuple):
 class UserCommands:
 
     @staticmethod
-    def cmd_get_current_folder(user: User, packet: Packet = None) -> bytes:
+    def where(user: User, packet: Packet = None) -> bytes:
         '''
         Send command 'where' for getting your current path
         '''
         return f'[>] you are now in {user.current_path}'.encode()
 
     @staticmethod
-    def cmd_open_file(user: User, packet: Packet) -> Tuple[Generator, int] | bytes:
+    def open(user: User, packet: Packet) -> Tuple[Generator, int] | bytes:
         '''
         open - open file.
                you can use absolute path (e.g. open D:\\folder\\file or open /home/folder/file)
@@ -39,15 +41,15 @@ class UserCommands:
         if not packet.cmd_tail:
             return f'[!] empty file path'.encode()
         else:
-            file = utility.define_abs_path(packet.cmd_tail[0], user.current_path)
-            if os.path.isfile(file):
-                file_size = os.stat(file)
+            file = utility.define_path(packet.cmd_tail[0], user.current_path)
+            if Path(file).is_file():
+                file_size = Path(file).stat()
                 return utility.gen_chunk_read(file), file_size.st_size
             else:
                 return f'[!] no such file'.encode()
 
     @staticmethod
-    def cmd_get_list_of_files(user: User, packet: Packet = None) -> bytes:
+    def list(user: User, packet: Packet = None) -> bytes:
         '''
         list - shows directories and files in directory.
                You can use absolute path (e.g. list D:\\folder or list /home/folder)
@@ -66,17 +68,17 @@ class UserCommands:
         return res.encode()
 
     @staticmethod
-    def cmd_create_folder(user: User, packet: Packet) -> bytes:
+    def nefo(user: User, packet: Packet) -> bytes:
         '''
         nefo - create folder in current path in case of packet.cmd_tail == 0 (e.g. got 'nefo newfolder')
                 or in path from packet (e.g. got 'nefo D:\\newfolder')
         '''
 
         if packet.cmd_tail:
-            path = utility.define_abs_path(packet.cmd_tail[0], user.current_path)
-            if not os.path.exists(path):
+            path = utility.define_path(packet.cmd_tail[0], user.current_path)
+            if not Path(path).exists():
                 try:
-                    os.mkdir(path)
+                    Path(path).mkdir()
                 except Exception as E:
                     return f'[err] something went wrong {E}'.encode()
                 res = f'[>] successfully created folder "{path}"'
@@ -87,7 +89,7 @@ class UserCommands:
         return res.encode()
 
     @staticmethod
-    def cmd_delete_folder(user: User, packet: Packet) -> bytes:
+    def defo(user: User, packet: Packet) -> bytes:
         '''
         defo - delete folder by absolute path or in current folder.
                You can use absolute path (e.g. defo D:\\folder or defo /home/folder)
@@ -95,9 +97,9 @@ class UserCommands:
         '''
 
         if packet.cmd_tail:
-            path = utility.define_abs_path(packet.cmd_tail[0], user.current_path)
+            path = utility.define_path(packet.cmd_tail[0], user.current_path)
             try:
-                os.rmdir(path)
+                Path(path).rmdir()
             except Exception as E:
                 return f'[err] something went wrong {E}'.encode()
             res = f'[>] successfully deleted folder "{path}"'
@@ -106,7 +108,7 @@ class UserCommands:
         return res.encode()
 
     @staticmethod
-    def cmd_delete_file(user: User, packet: Packet) -> bytes:
+    def defi(user: User, packet: Packet) -> bytes:
         '''
         defi - delete by absolute path or in current folder.
                Use absolute path (e.g. defi D:\\file or defi /home/file)
@@ -114,11 +116,10 @@ class UserCommands:
 
         '''
 
-        print(packet.cmd_tail)
         if packet.cmd_tail:
-            path = utility.define_abs_path(packet.cmd_tail[0], user.current_path)
+            path = utility.define_path(packet.cmd_tail[0], user.current_path)
             try:
-                os.remove(path)
+                Path(path).unlink()
             except Exception as E:
                 return f'[err] something went wrong {E}'.encode()
             res = f'[>] successfully deleted file "{path}"'
@@ -127,32 +128,33 @@ class UserCommands:
         return res.encode()
 
     @staticmethod
-    def cmd_save_file(user: User, packet: Packet) -> bytes:
+    def send(user: User, packet: Packet) -> bytes:
         '''
         to do: save from path with spaces!!!
 
         '''
         _from, *_to = packet.cmd_tail
-
-        if _to == 'here':
-            path_to_save = user.current_path + utility.PATH_DIV + utility.extract_file_name(_from)
-        elif len(_to) == 0:
-            path_to_save = user.home_path + utility.PATH_DIV + utility.extract_file_name(_from)
+        if len(_to) == 0:
+            path_to_save = Path().joinpath(user.home_path, Path(_from).name)
+        elif _to[0] == 'here':
+            path_to_save = Path().joinpath(user.current_path, Path(_from).name)
         else:
-            path_to_save = _to + utility.PATH_DIV + utility.extract_file_name(_from)
+            path_to_save = Path().joinpath(_to[0], Path(_from).name)
+        if path_to_save.parent.exists():
+            with open(path_to_save, 'wb') as f:
+                already_read = 0
+                while already_read < packet.data_length:
+                    to_read = packet.data_length - already_read
+                    data = user.sock.recv(4096 if to_read > 4096 else to_read)
+                    f.write(data)
+                    already_read += len(data)
+            return f'[>] file was successfully saved to "{path_to_save.__str__()}" '.encode()
+        else:
+            return f'[>] no such path "{path_to_save.parent}"'.encode()
 
-        with open(path_to_save, 'wb') as f:
-            already_read = 0
-            while already_read < packet.data_length:
-                to_read = packet.data_length - already_read
-                data = user.sock.recv(4096 if to_read > 4096 else to_read)
-                f.write(data)
-                already_read += len(data)
-
-        return f'[>] file was successfully saved to "{path_to_save}" '.encode()
 
     @staticmethod
-    def cmd_change_folder(user: User, packet: Packet) -> bytes:
+    def jump(user: User, packet: Packet) -> bytes:
         '''
         jump - change your current folder (e.g. jump D:\\folder or jump /home/folder)
                or jump folder.
@@ -160,22 +162,23 @@ class UserCommands:
                'jump home' moves you to your home directory
         '''
         if not packet.cmd_tail:
-            path = utility.jump_up(user.current_path)
+            path = Path(user.current_path).parent
         else:
             if packet.cmd_tail[0].startswith('home'):
                 path = user.home_path
             else:
-                path = utility.define_abs_path(packet.cmd_tail[0], user.current_path)
+                path = utility.define_path(packet.cmd_tail[0], user.current_path)
 
-        if os.path.exists(path) and os.path.isdir(path):
-            user.current_path = path
-            res = f'[>] path changed to {path}'
+        if Path(path).exists() and Path(path).is_dir():
+
+            user.current_path = path.__str__()
+            res = f'[>] path changed to {path.__str__()}'
         else:
-            res = f'[!] no such folder {path}'
+            res = f'[!] no such folder {path.__str__()}'
         return res.encode()
 
     @staticmethod
-    def cmd_get_info(user: User, packet: Packet, ) -> bytes:
+    def info(user: User, packet: Packet, ) -> bytes:
         '''
         info - get information about folder (e.g info 'D:\\folder or info /home/folder)
                or about file (e.g. info 'D:\\folder\\file or info /home/file)
@@ -183,9 +186,8 @@ class UserCommands:
         if not packet.cmd_tail:
             res = f'[!] empty filepath'
         else:
-            file_path = utility.define_abs_path(packet.cmd_tail[0], user.current_path)
+            file_path = utility.define_path(packet.cmd_tail[0], user.current_path)
             try:
-                # status = os.stat(file_path)
                 status = Path(file_path).stat()
                 res = (f'{file_path} info:\n\t'
                        f'Size: {status.st_size} bytes\n\t'
@@ -201,6 +203,6 @@ class UserCommands:
         return res.encode()
 
     @staticmethod
-    def cmd_who(user: User, packet: Packet = None) -> bytes:
-        return user.get_full_info().encode()
+    def whoami(user: User, packet: Packet = None) -> bytes:
 
+        return user.get_full_info().encode()

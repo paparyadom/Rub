@@ -1,12 +1,13 @@
 import socket
-from typing import Dict, Tuple
+from typing import Dict, Tuple, List
 
 import Saveloader
 from Saveloader.SaveLoader import JsonSaveLoader
+# from Session import SessionHandler
 
 
 class User:
-    def __init__(self, uid: str, addr: Tuple, sock:socket.socket, current_path: str, permissions: Dict = {'*':'*'}, home_path: str = None, ):
+    def __init__(self, uid: str, addr: Tuple, sock:socket.socket, current_path: str, permissions: List = ['userperms'], home_path: str = None, commands = None):
         self.__id = uid
         self.__current_path = current_path
         self.__home_path = home_path
@@ -61,12 +62,17 @@ class User:
 
 
 class SuperUser(User):
-    def __init__(self, DataHandler: Saveloader.SaveLoader, **kwargs):
+    def __init__(self, DataHandler: Saveloader.SaveLoader, SessionHandler, **kwargs):
         super().__init__(**kwargs)
         self._DataHandler = DataHandler
-        self.permissions = {'/': '/'}
+        self._SessionHandler = SessionHandler
+        self.permissions = []
 
 
     @property
     def DataHandler(self):
         return self._DataHandler
+
+    @property
+    def SessionHandler(self):
+        return self._SessionHandler

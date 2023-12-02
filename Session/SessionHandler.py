@@ -27,6 +27,14 @@ class UsersSessionHandler:
         self.__active_sessions: Dict[Tuple, User] = dict()
         self.__UserDataHandler = UserDataHandler
 
+    @property
+    def UserDataHandler(self):
+        return self.__UserDataHandler
+
+    @property
+    def active_sessions(self):
+        return self.__active_sessions
+
     def from_user(self, addr: Tuple) -> User:
         return self.__active_sessions[addr]
 
@@ -42,6 +50,7 @@ class UsersSessionHandler:
     def __add_user_to_session(self, addr: Tuple, sock: socket.socket, udata: UserData):
         if udata.uid == 'superuser':
             user = SuperUser(DataHandler=self.__UserDataHandler,
+                             SessionHandler=self,
                              uid=udata.uid,
                              current_path=udata.current_path,
                              home_path=udata.home_path,
@@ -64,9 +73,9 @@ class UsersSessionHandler:
         self.__active_sessions.pop(addr)
 
     def __str__(self):
-        sessions = ''
+        sessions = 'Active users:\n'
         for snum, session in enumerate(self.__active_sessions.keys(), start=1):
-            sessions += f'[{snum}] {session} - {self.__active_sessions[session].uid} \n'
+            sessions += f'[{snum}] {session} - {self.__active_sessions[session].uid}\n'
         return sessions
 
     @staticmethod

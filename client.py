@@ -5,6 +5,7 @@ import struct
 # UUID = '628c93f2-8d44-11ee-9706-07b2e7b92ea1'
 UUID = 'superuser'
 # UUID = 'foo'
+# UUID = 'bar'
 
 class Client:
     def __init__(self):
@@ -76,7 +77,6 @@ class Client:
 
     def send_file(self, input_command):
         command, _from, *_to = input_command.split()
-        print(input_command)
         file_size = os.stat(_from)
 
         with open(_from, 'rb') as f:
