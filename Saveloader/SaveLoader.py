@@ -10,7 +10,7 @@ from utility import walk_around_folder
 class UserData(NamedTuple):
     uid: str
     current_path: str
-    permissions: []
+    permissions: {}
     home_path: str
 
 
@@ -35,7 +35,7 @@ class JsonSaveLoader(SaveLoader):
 
     def create_user(self, uid: str) -> UserData:
         _path = [os.getcwd(), self.__storage_path, uid, 'udata.json']
-        udata = {uid: {'permissions': [],
+        udata = {uid: {'permissions': {'w': [], 'r': []},
                        'current_path': self.__sep.join(_path[:-1]),
                        'home_path': self.__sep.join(_path[:-1])
                        }
@@ -46,7 +46,7 @@ class JsonSaveLoader(SaveLoader):
         with open(self.__sep.join(_path), 'w') as f:
             json.dump(udata, f)
 
-        return UserData(uid, udata[uid]['current_path'], [], udata[uid]['home_path'])
+        return UserData(uid, udata[uid]['current_path'], udata[uid]['permissions'], udata[uid]['home_path'])
 
     def load_user(self, uid: str) -> UserData:
         upath = self.__sep.join((self.__storage_path, uid, 'udata.json'))
@@ -78,4 +78,3 @@ class JsonSaveLoader(SaveLoader):
         path, folders, files = walk_around_folder(self.__storage_path, as_str=False)
         user_list = 'Stored users:\n' + functools.reduce(lambda x, y: f'{x}\n{y}', folders)
         return user_list
-

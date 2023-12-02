@@ -111,6 +111,6 @@ if __name__ == '__main__':
         host, port = sys.argv[1:]
         server = Server(host, port)
     except:
-        host, port = 'localhost', 5454
+        host, port = 'localhost', 5455
         server = Server(host, int(port))
     server.run()

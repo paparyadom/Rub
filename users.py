@@ -7,7 +7,7 @@ from Saveloader.SaveLoader import JsonSaveLoader
 
 
 class User:
-    def __init__(self, uid: str, addr: Tuple, sock:socket.socket, current_path: str, permissions: List = ['userperms'], home_path: str = None, commands = None):
+    def __init__(self, uid: str, addr: Tuple, sock:socket.socket, current_path: str, permissions: Dict = {'w':[], 'r':[]}, home_path: str = None, commands = None):
         self.__id = uid
         self.__current_path = current_path
         self.__home_path = home_path
@@ -66,7 +66,7 @@ class SuperUser(User):
         super().__init__(**kwargs)
         self._DataHandler = DataHandler
         self._SessionHandler = SessionHandler
-        self.permissions = []
+        self.permissions = {'godmode'}
 
 
     @property

@@ -32,14 +32,14 @@ class SuperUserCommands(UserCommands):
         for _user in user.SessionHandler.active_sessions.values():
             if _user.uid == target_uid:
                 for perm in perms:
-                    _user.permissions.append(perm)
+                    _user.permissions['w'].append(perm)
                 return f'{target_uid} permissions was changed to {_user.permissions}'.encode()
 
         udata: UserData = user.DataHandler.load_user(target_uid)
         current_perms = udata.permissions
         try:
             for perm in perms:
-                current_perms.append(perm)
+                current_perms['w'].append(perm)
             user.DataHandler.save_user_data(UserData(uid=udata.uid,
                                                      current_path=udata.current_path,
                                                      home_path=udata.home_path,
@@ -57,14 +57,14 @@ class SuperUserCommands(UserCommands):
         for _user in user.SessionHandler.active_sessions.values():
             if _user.uid == target_uid:
                 for perm in perms:
-                    _user.permissions.remove(perm)
+                    _user.permissions['w'].remove(perm)
                 return f'{target_uid} permissions was changed to {_user.permissions}'.encode()
 
         udata: UserData = user.DataHandler.load_user(target_uid)
         current_perms = udata.permissions
         try:
             for perm in perms:
-                current_perms.remove(perm)
+                current_perms['w'].remove(perm)
             user.DataHandler.save_user_data(UserData(uid=udata.uid,
                                                      current_path=udata.current_path,
                                                      home_path=udata.home_path,
