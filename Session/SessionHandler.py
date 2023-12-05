@@ -58,7 +58,7 @@ class UsersSessionHandler:
                              addr=addr)
         else:
             user = User(uid=udata.uid,
-                        permissions=udata.permissions,
+                        restrictions=udata.restrictions,
                         current_path=udata.current_path,
                         home_path=udata.home_path,
                         sock=sock,
@@ -68,7 +68,7 @@ class UsersSessionHandler:
 
     def end_user_session(self, addr: Tuple):
         user = self.__active_sessions[addr]
-        udata = UserData(user.uid, user.current_path, user.permissions, user.home_path)
+        udata = UserData(user.uid, user.current_path, user.restrictions, user.home_path)
         self.__UserDataHandler.save_user_data(udata)
         self.__active_sessions.pop(addr)
 

@@ -1,20 +1,7 @@
 import os
-from typing import Generator, Tuple
 from pathlib import Path
-from pip._internal.utils.deprecation import deprecated
+from typing import Generator, Tuple, List
 
-PATH_DIV = os.sep
-
-
-# deprecated(reason='Now used Path(path).is_absolute()', replacement='Path().is_absolute()', gone_in='unknown')
-def is_path(path_or_folder: str) -> bool:
-    '''
-    check if path_to_folder is path. Use to avoid path like 'D:' in Windows OS when
-    os.path.isdir() returns True
-
-    '''
-    symbols = ['\\', '/']
-    return True if any(symbol in path_or_folder for symbol in symbols) else False
 
 
 def walk_around_folder(abs_path: str, as_str: bool = True) -> str | Tuple:
@@ -52,24 +39,11 @@ def define_path(path_or_folder: str, user_path: str) -> str:
     return path
 
 
-def extract_file_name(file_path: str) -> str:
-    '''
-    extract file name from path to file
 
-    '''
-    return file_path.split(PATH_DIV)[-1]
+def is_allowed(path: Path, restricted_path: List[str]) -> bool:
+    target_path = path
+    for path in restricted_path:
+        if target_path.is_relative_to(Path(path)):
+            return False
+    return True
 
-# deprecated
-def jump_up(path: str) -> str:
-    splitted_path = path.split(PATH_DIV)
-    new_path = PATH_DIV.join(splitted_path[:-1])
-
-    return new_path if new_path[-1] != ':' else new_path + PATH_DIV
-
-
-def is_avaliable_folder(folder_path: str):
-    '''
-    check if user has permission to folder
-    :return:
-    '''
-    raise NotImplemented

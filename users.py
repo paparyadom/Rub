@@ -1,17 +1,20 @@
 import socket
-from typing import Dict, Tuple, List
+from typing import Dict, Tuple
 
 import Saveloader
 from Saveloader.SaveLoader import JsonSaveLoader
+
+
 # from Session import SessionHandler
 
 
 class User:
-    def __init__(self, uid: str, addr: Tuple, sock:socket.socket, current_path: str, permissions: Dict = {'w':[], 'r':[]}, home_path: str = None, commands = None):
+    def __init__(self, uid: str, addr: Tuple, sock: socket.socket, current_path: str, restrictions: Dict,
+                 home_path: str = None):
         self.__id = uid
         self.__current_path = current_path
         self.__home_path = home_path
-        self.__permissions = permissions
+        self.__restrictions = restrictions
         self.__sock = sock
         self.__addr = addr
 
@@ -21,16 +24,15 @@ class User:
 
     @current_path.setter
     def current_path(self, path: str):
-        print('path was changed')
         self.__current_path = path
 
     @property
-    def permissions(self):
-        return self.__permissions
+    def restrictions(self):
+        return self.__restrictions
 
-    @permissions.setter
-    def permissions(self, permissions):
-        self.__permissions = permissions
+    @restrictions.setter
+    def restrictions(self, restrictions):
+        self.__restrictions = restrictions
 
     @property
     def sock(self):
@@ -54,7 +56,7 @@ class User:
 
     def get_full_info(self):
         info = (f'id = {self.__id}\n'
-                f'permissions = {self.__permissions}\n'
+                f'Restrictions = {self.__restrictions}\n'
                 f'current path = {self.__current_path}\n'
                 f'home path = {self.__home_path}\n'
                 f'address = {self.__addr}\n')
@@ -63,11 +65,10 @@ class User:
 
 class SuperUser(User):
     def __init__(self, DataHandler: Saveloader.SaveLoader, SessionHandler, **kwargs):
-        super().__init__(**kwargs)
+        super().__init__(restrictions={'w': ['...'], 'r': ['...'], 'x': ['...']}, **kwargs)
         self._DataHandler = DataHandler
         self._SessionHandler = SessionHandler
-        self.permissions = {'godmode'}
-
+        self._restrictions = super().restrictions
 
     @property
     def DataHandler(self):
@@ -76,3 +77,5 @@ class SuperUser(User):
     @property
     def SessionHandler(self):
         return self._SessionHandler
+
+

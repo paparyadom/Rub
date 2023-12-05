@@ -1,9 +1,8 @@
-import abc
 import stat
 import time
 from pathlib import Path
 from typing import Tuple, Generator, NamedTuple
-
+import re
 
 import utility
 from users import User
@@ -41,10 +40,12 @@ class UserCommands:
         if not packet.cmd_tail:
             return f'[!] empty file path'.encode()
         else:
-            file = utility.define_path(packet.cmd_tail[0], user.current_path)
-            if Path(file).is_file():
-                file_size = Path(file).stat()
-                return utility.gen_chunk_read(file), file_size.st_size
+            path = Path(utility.define_path(packet.cmd_tail[0], user.current_path))
+            if Path(path).is_file():
+                if not utility.is_allowed(path, user.restrictions['r']):
+                    return f'[!] you have no permission to {path}'.encode()
+                file_size = Path(path).stat()
+                return utility.gen_chunk_read(path.__str__()), file_size.st_size
             else:
                 return f'[!] no such file'.encode()
 
@@ -57,14 +58,20 @@ class UserCommands:
                you will get objects in your current directory.
 
         '''
-
         if packet.cmd_tail:
+            path = Path(utility.define_path(packet.cmd_tail[0], user.current_path))
+            if not utility.is_allowed(path, user.restrictions['x']):
+                return f'[!] you have no permission to {path}'.encode()
+
             try:
-                res = utility.walk_around_folder(packet.cmd_tail[0])
+                res = utility.walk_around_folder(path.__str__())
             except:
-                return f'[!] unreachable path {packet.cmd_tail[0]}'.encode()
+                return f'[!] unreachable path {path}'.encode()
         else:
-            res = utility.walk_around_folder(user.current_path)
+            path = Path(user.current_path)
+            if not utility.is_allowed(path, user.restrictions['x']):
+                return f'[!] you have no permission to {path}'.encode()
+            res = utility.walk_around_folder(path.__str__())
         return res.encode()
 
     @staticmethod
@@ -75,7 +82,9 @@ class UserCommands:
         '''
 
         if packet.cmd_tail:
-            path = utility.define_path(packet.cmd_tail[0], user.current_path)
+            path = Path(utility.define_path(packet.cmd_tail[0], user.current_path))
+            if not utility.is_allowed(path, user.restrictions['x']):
+                return f'[!] you have no permission to {path}'.encode()
             if not Path(path).exists():
                 try:
                     Path(path).mkdir()
@@ -97,7 +106,9 @@ class UserCommands:
         '''
 
         if packet.cmd_tail:
-            path = utility.define_path(packet.cmd_tail[0], user.current_path)
+            path = Path(utility.define_path(packet.cmd_tail[0], user.current_path))
+            if not utility.is_allowed(path, user.restrictions['x']):
+                return f'[!] you have no permission to {path}'.encode()
             try:
                 Path(path).rmdir()
             except Exception as E:
@@ -117,7 +128,9 @@ class UserCommands:
         '''
 
         if packet.cmd_tail:
-            path = utility.define_path(packet.cmd_tail[0], user.current_path)
+            path = Path(utility.define_path(packet.cmd_tail[0], user.current_path))
+            if not utility.is_allowed(path, user.restrictions['x']):
+                return f'[!] you have no permission to {path}'.encode()
             try:
                 Path(path).unlink()
             except Exception as E:
@@ -140,6 +153,10 @@ class UserCommands:
             path_to_save = Path().joinpath(user.current_path, Path(_from).name)
         else:
             path_to_save = Path().joinpath(_to[0], Path(_from).name)
+
+        if not utility.is_allowed(path_to_save, user.restrictions['w']):
+            return f'[!] you have no permission to {path_to_save}'.encode()
+
         if path_to_save.parent.exists():
             with open(path_to_save, 'wb') as f:
                 already_read = 0
@@ -164,12 +181,14 @@ class UserCommands:
         if not packet.cmd_tail:
             path = Path(user.current_path).parent
         else:
-            if packet.cmd_tail[0].startswith('home'):
-                path = user.home_path
+            if packet.cmd_tail[0].startswith('-home'):
+                path = Path(user.home_path)
             else:
-                path = utility.define_path(packet.cmd_tail[0], user.current_path)
+                path = Path(utility.define_path(packet.cmd_tail[0], user.current_path))
 
         if Path(path).exists() and Path(path).is_dir():
+            if not utility.is_allowed(path, user.restrictions['x']):
+                return f'[!] you have no permission to {path}'.encode()
 
             user.current_path = path.__str__()
             res = f'[>] path changed to {path.__str__()}'
@@ -186,10 +205,12 @@ class UserCommands:
         if not packet.cmd_tail:
             res = f'[!] empty filepath'
         else:
-            file_path = utility.define_path(packet.cmd_tail[0], user.current_path)
+            path = Path(utility.define_path(packet.cmd_tail[0], user.current_path))
+            if not utility.is_allowed(path, user.restrictions['x']):
+                return f'[!] you have no permission to {path}'.encode()
             try:
-                status = Path(file_path).stat()
-                res = (f'{file_path} info:\n\t'
+                status = Path(path).stat()
+                res = (f'{path} info:\n\t'
                        f'Size: {status.st_size} bytes\n\t'
                        f'Permissions:{stat.filemode(status.st_mode)}\n\t'
                        f'Owner:{status.st_uid}\n\t'
@@ -204,5 +225,4 @@ class UserCommands:
 
     @staticmethod
     def whoami(user: User, packet: Packet = None) -> bytes:
-
         return user.get_full_info().encode()
