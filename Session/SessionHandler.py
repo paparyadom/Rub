@@ -88,6 +88,7 @@ class UsersSessionHandler:
         user = self.__active_sessions[addr]
         udata = UserData(user.uid, user.current_path, user.restrictions, user.home_path)
         self.__UserDataHandler.save_user_data(udata)
+        user.sock.close()
         self.__active_sessions.pop(addr)
 
     def __str__(self):

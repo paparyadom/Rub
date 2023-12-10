@@ -88,8 +88,9 @@ class Server:
         return True
 
     def stop(self):
-        for user in self.UsersSessionHandler.active_sessions.values():
-            user.sock.close()
+        sessions = set(addr for addr in self.UsersSessionHandler.active_sessions.keys())
+        for addr in sessions:
+            self.UsersSessionHandler.end_user_session(addr)
         self.ssock.close()
         logging.warning('STOP')
 
@@ -118,10 +119,10 @@ if __name__ == '__main__':
 
     try:
         host, port = sys.argv[1:]
-        server = Server(host, port, proto=SimpleProto())
+        server = Server(host, int(port), proto=SimpleProto())
     except:
         host, port = '', 5455
-        server = Server(host, int(port), proto=SimpleProto())
+        server = Server(host, port, proto=SimpleProto())
     try:
         server.run()
     except KeyboardInterrupt:

@@ -78,10 +78,10 @@ if __name__ == '__main__':
     try:
         host, port = sys.argv[1:]
     except:
-        host, port = '', 5454
+        host, port = '', 5455
     finally:
         client = Client(proto=SimpleProto())
-        client.connect('localhost', 5454)
+        client.connect('localhost', 5455)
     try:
         client.communicate()
     except Exception as E:
