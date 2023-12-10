@@ -119,10 +119,11 @@ if __name__ == '__main__':
 
     try:
         host, port = sys.argv[1:]
-        server = Server(host, int(port), proto=SimpleProto())
     except:
         host, port = '', 5455
-        server = Server(host, port, proto=SimpleProto())
+    finally:
+        server = Server(host, port, proto=TCD8())
+
     try:
         server.run()
     except KeyboardInterrupt:

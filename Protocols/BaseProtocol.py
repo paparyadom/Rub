@@ -145,6 +145,7 @@ class TCD8(BaseProtocol):
         return data
 
     def file_send_request(self, csock: socket.socket, request: str):
+        csock.settimeout(None)
         command, _from, *_to = request.split()
         file_size = Path(_from).stat().st_size
         t_length = struct.pack('>Q', len(request) + 8)
@@ -167,6 +168,7 @@ class TCD8(BaseProtocol):
             with open(_from, 'rb') as f:
                 f.seek(cursor)
                 csock.sendall(f.read())
+            csock.settimeout(.05)
 
         send_file(_from, pre_send_request())
 

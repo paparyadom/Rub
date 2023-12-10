@@ -80,7 +80,7 @@ if __name__ == '__main__':
     except:
         host, port = '', 5455
     finally:
-        client = Client(proto=SimpleProto())
+        client = Client(proto=TCD8())
         client.connect('localhost', 5455)
     try:
         client.communicate()
