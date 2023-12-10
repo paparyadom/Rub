@@ -7,44 +7,45 @@ from typing import Union
 
 import select
 
-from Saveloader.SaveLoader import JsonSaveLoader
 from InputHandler import InputsHandler
-from Protocols.BaseProtocol import TCD8
-from users import User
+from Protocols.BaseProtocol import *
+from Saveloader.SaveLoader import JsonSaveLoader
 from Session.SessionHandler import UsersSessionHandler
+from users import User
 
 if not os.path.exists('storage'):
     os.mkdir('storage')
 
 
 class Server:
-    def __init__(self, host: str, port: int):
+    def __init__(self, host: str, port: int, proto: BaseProtocol):
         self.host = host
         self.port = port
         self.outputs = []
         self.inputs = []
 
-        self.server_socket = self.__init_socket(self.host, self.port)
+        self.ssock = self.__init_socket(self.host, self.port)
         self.logger = self.__init_logger()
 
-        self.CommandHandler = InputsHandler()
+        self.__InputsHandler = InputsHandler({'superuser'})
         self.UserDataHandler = JsonSaveLoader(storage_path='storage')
         self.UsersSessionHandler = UsersSessionHandler(self.UserDataHandler)
-        self.Proto = TCD8()
+        self.Proto = proto
 
     def run(self):
         '''
 
         start file server
         '''
-        self.inputs.append(self.server_socket)
+        self.inputs.append(self.ssock)
         while True:
             self.logger.info(f'({self.host}:{self.port}) waiting for connections or data...')
             readable, writeable, exceptional = select.select(self.inputs, self.outputs, self.inputs)
             for sock in readable:
-                if sock is self.server_socket:
-                    sock, addr = self.server_socket.accept()
-                    self.UsersSessionHandler.check_user(addr, sock)
+                if sock is self.ssock:
+                    sock, addr = self.ssock.accept()  # accept connection from user
+                    # uid = self.Proto.handshake(sock)
+                    self.UsersSessionHandler.check_user(addr, sock, self.Proto.handshake(sock))  # check user
                     self.logger.info(f'connected by {addr}')
                     self.inputs.append(sock)
                 else:
@@ -64,7 +65,10 @@ class Server:
         '''
         qstatus, command, data_length = self.Proto.receive_data(user.sock)
         if command and command != b'exit':
-            output_data = self.CommandHandler.handle_text_command(user, command, data_length)
+            if command.startswith((b'send', b'open')):
+                output_data = self.__InputsHandler.handle_files(user, command, data_length, self.Proto)
+            else:
+                output_data = self.__InputsHandler.handle_text_command(user, command, data_length)
             return self.__handle_answer(user, output_data)
         else:
             return False
@@ -74,14 +78,20 @@ class Server:
         send text answer or file as bytes to user
         output_data is bytes for text answer
         or
-        <class 'generator'> if need to send file
+        <class 'generator'> in case of file sending
 
         '''
         if isinstance(output_data[0], GeneratorType):
             self.Proto.send_file(user.sock, output_data)
         else:
-            self.Proto.send_text(user.sock, output_data)
+            self.Proto.send_data(user.sock, output_data)
         return True
+
+    def stop(self):
+        for user in self.UsersSessionHandler.active_sessions.values():
+            user.sock.close()
+        self.ssock.close()
+        logging.warning('STOP')
 
     @staticmethod
     def __close_connection(user_sock: socket.socket):
@@ -105,12 +115,15 @@ class Server:
 
 
 if __name__ == '__main__':
-    import threading
 
     try:
         host, port = sys.argv[1:]
-        server = Server(host, port)
+        server = Server(host, port, proto=SimpleProto())
     except:
-        host, port = 'localhost', 5454
-        server = Server(host, int(port))
-    server.run()
+        host, port = '', 5455
+        server = Server(host, int(port), proto=SimpleProto())
+    try:
+        server.run()
+    except KeyboardInterrupt:
+        server.stop()
+

@@ -1,11 +1,10 @@
 import stat
 import time
 from pathlib import Path
-from typing import Tuple, Generator, NamedTuple
-import re
+from typing import Callable, Generator, NamedTuple, Tuple
 
 import utility
-from users import User
+from users import User, SuperUser
 
 
 class Packet(NamedTuple):
@@ -14,6 +13,7 @@ class Packet(NamedTuple):
     cmd_tail - string without command word
     data_length - amount of data we need to save (in case of receiving file)
     '''
+    user: User | SuperUser
     cmd_tail: Tuple[str]
     data_length: int
 
@@ -21,14 +21,14 @@ class Packet(NamedTuple):
 class UserCommands:
 
     @staticmethod
-    def where(user: User, packet: Packet = None) -> bytes:
+    def where(packet: Packet) -> bytes:
         '''
         Send command 'where' for getting your current path
         '''
-        return f'[>] you are now in {user.current_path}'.encode()
+        return f'[>] you are now in {packet.user.current_path}'.encode()
 
     @staticmethod
-    def open(user: User, packet: Packet) -> Tuple[Generator, int] | bytes:
+    def open(packet: Packet) -> Tuple[Generator, int] | bytes:
         '''
         open - open file.
                you can use absolute path (e.g. open D:\\folder\\file or open /home/folder/file)
@@ -40,9 +40,9 @@ class UserCommands:
         if not packet.cmd_tail:
             return f'[!] empty file path'.encode()
         else:
-            path = Path(utility.define_path(packet.cmd_tail[0], user.current_path))
+            path = Path(utility.define_path(packet.cmd_tail[0], packet.user.current_path))
             if Path(path).is_file():
-                if not utility.is_allowed(path, user.restrictions['r']):
+                if not utility.is_allowed(path, packet.user.restrictions['r']):
                     return f'[!] you have no permission to {path}'.encode()
                 file_size = Path(path).stat()
                 return utility.gen_chunk_read(path.__str__()), file_size.st_size
@@ -50,7 +50,7 @@ class UserCommands:
                 return f'[!] no such file'.encode()
 
     @staticmethod
-    def list(user: User, packet: Packet = None) -> bytes:
+    def list(packet: Packet) -> bytes:
         '''
         list - shows directories and files in directory.
                You can use absolute path (e.g. list D:\\folder or list /home/folder)
@@ -59,31 +59,30 @@ class UserCommands:
 
         '''
         if packet.cmd_tail:
-            path = Path(utility.define_path(packet.cmd_tail[0], user.current_path))
-            if not utility.is_allowed(path, user.restrictions['x']):
+            path = Path(utility.define_path(packet.cmd_tail[0], packet.user.current_path))
+            if not utility.is_allowed(path, packet.user.restrictions['x']):
                 return f'[!] you have no permission to {path}'.encode()
-
             try:
                 res = utility.walk_around_folder(path.__str__())
             except:
                 return f'[!] unreachable path {path}'.encode()
         else:
-            path = Path(user.current_path)
-            if not utility.is_allowed(path, user.restrictions['x']):
+            path = Path(packet.user.current_path)
+            if not utility.is_allowed(path, packet.user.restrictions['x']):
                 return f'[!] you have no permission to {path}'.encode()
             res = utility.walk_around_folder(path.__str__())
         return res.encode()
 
     @staticmethod
-    def nefo(user: User, packet: Packet) -> bytes:
+    def nefo(packet: Packet) -> bytes:
         '''
-        nefo - create folder in current path in case of packet.cmd_tail == 0 (e.g. got 'nefo newfolder')
-                or in path from packet (e.g. got 'nefo D:\\newfolder')
+        nefo - create folder in current path in case of packet.cmd_tail == 0 (e.g. nefo newfolder)
+                or in path from packet (e.g. 'nefo D:\\newfolder')
         '''
 
         if packet.cmd_tail:
-            path = Path(utility.define_path(packet.cmd_tail[0], user.current_path))
-            if not utility.is_allowed(path, user.restrictions['x']):
+            path = Path(utility.define_path(packet.cmd_tail[0], packet.user.current_path))
+            if not utility.is_allowed(path, packet.user.restrictions['x']):
                 return f'[!] you have no permission to {path}'.encode()
             if not Path(path).exists():
                 try:
@@ -98,7 +97,7 @@ class UserCommands:
         return res.encode()
 
     @staticmethod
-    def defo(user: User, packet: Packet) -> bytes:
+    def defo(packet: Packet) -> bytes:
         '''
         defo - delete folder by absolute path or in current folder.
                You can use absolute path (e.g. defo D:\\folder or defo /home/folder)
@@ -106,8 +105,8 @@ class UserCommands:
         '''
 
         if packet.cmd_tail:
-            path = Path(utility.define_path(packet.cmd_tail[0], user.current_path))
-            if not utility.is_allowed(path, user.restrictions['x']):
+            path = Path(utility.define_path(packet.cmd_tail[0], packet.user.current_path))
+            if not utility.is_allowed(path, packet.user.restrictions['x']):
                 return f'[!] you have no permission to {path}'.encode()
             try:
                 Path(path).rmdir()
@@ -119,17 +118,16 @@ class UserCommands:
         return res.encode()
 
     @staticmethod
-    def defi(user: User, packet: Packet) -> bytes:
+    def defi(packet: Packet) -> bytes:
         '''
         defi - delete by absolute path or in current folder.
                Use absolute path (e.g. defi D:\\file or defi /home/file)
                or relative path (e.g. defi file)
-
         '''
 
         if packet.cmd_tail:
-            path = Path(utility.define_path(packet.cmd_tail[0], user.current_path))
-            if not utility.is_allowed(path, user.restrictions['x']):
+            path = Path(utility.define_path(packet.cmd_tail[0], packet.user.current_path))
+            if not utility.is_allowed(path, packet.user.restrictions['x']):
                 return f'[!] you have no permission to {path}'.encode()
             try:
                 Path(path).unlink()
@@ -141,63 +139,91 @@ class UserCommands:
         return res.encode()
 
     @staticmethod
-    def send(user: User, packet: Packet) -> bytes:
+    def send(packet: Packet, check_fragmentation: bool) -> Tuple[int, Callable] | bytes:
         '''
         to do: save from path with spaces!!!
-
         '''
+
+        cursor_position = 0
+        mode = 'wb'
+
         _from, *_to = packet.cmd_tail
         if len(_to) == 0:
-            path_to_save = Path().joinpath(user.home_path, Path(_from).name)
+            path_to_save = Path().joinpath(packet.user.home_path, Path(_from).name)
+            print('i am here')
         elif _to[0] == 'here':
-            path_to_save = Path().joinpath(user.current_path, Path(_from).name)
+            path_to_save = Path().joinpath(packet.user.current_path, Path(_from).name)
         else:
             path_to_save = Path().joinpath(_to[0], Path(_from).name)
 
-        if not utility.is_allowed(path_to_save, user.restrictions['w']):
+        if not path_to_save.parent.exists():
+            return f'[>] no such path "{path_to_save.parent}"'.encode()
+
+        if not utility.is_allowed(path_to_save, packet.user.restrictions['w']):
             return f'[!] you have no permission to {path_to_save}'.encode()
 
-        if path_to_save.parent.exists():
-            with open(path_to_save, 'wb') as f:
+        if check_fragmentation:
+            fragmented_path = Path(path_to_save.__str__() + '.part')
+            if fragmented_path.exists():
+                cursor_position = fragmented_path.stat().st_size
+                path_to_save = fragmented_path
+                mode = 'ab'
+
+
+        def saver(packet: Packet):
+            nonlocal path_to_save
+            nonlocal mode
+
+            with open(path_to_save, mode) as f:
                 already_read = 0
                 while already_read < packet.data_length:
                     to_read = packet.data_length - already_read
-                    data = user.sock.recv(4096 if to_read > 4096 else to_read)
-                    f.write(data)
-                    already_read += len(data)
+                    try:
+                        data = packet.user.sock.recv(4096 if to_read > 4096 else to_read)
+                        f.write(data)
+                        already_read += len(data)
+                    except:
+                        f.close()
+                        path_to_save.rename(path_to_save.__str__() + '.part')
+                        break
+            if mode == 'ab':
+                path_to_save.rename(path_to_save.__str__()[:-5])
+
             return f'[>] file was successfully saved to "{path_to_save.__str__()}" '.encode()
-        else:
-            return f'[>] no such path "{path_to_save.parent}"'.encode()
+        return cursor_position, saver
+
+
+
 
 
     @staticmethod
-    def jump(user: User, packet: Packet) -> bytes:
+    def jump(packet: Packet) -> bytes:
         '''
         jump - change your current folder (e.g. jump D:\\folder or jump /home/folder)
                or jump folder.
                single 'jump' moves you to one folder up
-               'jump home' moves you to your home directory
+               'jump -home' moves you to your home directory
         '''
         if not packet.cmd_tail:
-            path = Path(user.current_path).parent
+            path = Path(packet.user.current_path).parent
         else:
             if packet.cmd_tail[0].startswith('-home'):
-                path = Path(user.home_path)
+                path = Path(packet.user.home_path)
             else:
-                path = Path(utility.define_path(packet.cmd_tail[0], user.current_path))
+                path = Path(utility.define_path(packet.cmd_tail[0], packet.user.current_path))
 
         if Path(path).exists() and Path(path).is_dir():
-            if not utility.is_allowed(path, user.restrictions['x']):
+            if not utility.is_allowed(path, packet.user.restrictions['x']):
                 return f'[!] you have no permission to {path}'.encode()
 
-            user.current_path = path.__str__()
+            packet.user.current_path = path.__str__()
             res = f'[>] path changed to {path.__str__()}'
         else:
             res = f'[!] no such folder {path.__str__()}'
         return res.encode()
 
     @staticmethod
-    def info(user: User, packet: Packet, ) -> bytes:
+    def info(packet: Packet, ) -> bytes:
         '''
         info - get information about folder (e.g info 'D:\\folder or info /home/folder)
                or about file (e.g. info 'D:\\folder\\file or info /home/file)
@@ -205,8 +231,8 @@ class UserCommands:
         if not packet.cmd_tail:
             res = f'[!] empty filepath'
         else:
-            path = Path(utility.define_path(packet.cmd_tail[0], user.current_path))
-            if not utility.is_allowed(path, user.restrictions['x']):
+            path = Path(utility.define_path(packet.cmd_tail[0], packet.user.current_path))
+            if not utility.is_allowed(path, packet.user.restrictions['x']):
                 return f'[!] you have no permission to {path}'.encode()
             try:
                 status = Path(path).stat()
@@ -220,9 +246,8 @@ class UserCommands:
                        )
             except Exception as e:
                 res = f'[err] something went wrong {e}'
-
         return res.encode()
 
     @staticmethod
-    def whoami(user: User, packet: Packet = None) -> bytes:
-        return user.get_full_info().encode()
+    def whoami(packet: Packet) -> bytes:
+        return packet.user.get_full_info().encode()

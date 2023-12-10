@@ -5,8 +5,6 @@ import Saveloader
 from Saveloader.SaveLoader import JsonSaveLoader
 
 
-# from Session import SessionHandler
-
 
 class User:
     def __init__(self, uid: str, addr: Tuple, sock: socket.socket, current_path: str, restrictions: Dict,

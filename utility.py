@@ -1,7 +1,6 @@
 import os
 from pathlib import Path
-from typing import Generator, Tuple, List
-
+from typing import Generator, List, Tuple
 
 
 def walk_around_folder(abs_path: str, as_str: bool = True) -> str | Tuple:
@@ -39,8 +38,10 @@ def define_path(path_or_folder: str, user_path: str) -> str:
     return path
 
 
-
 def is_allowed(path: Path, restricted_path: List[str]) -> bool:
+    '''
+    check user restrictions
+    '''
     target_path = path
     for path in restricted_path:
         if target_path.is_relative_to(Path(path)):
