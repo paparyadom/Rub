@@ -43,9 +43,9 @@
 | Команда     | Тело команды                 | Тело ответа             | Ошибки        | Описание        |
 |-------------|------------------------------|-------------------------|---------------|-----------------|
 |[acts](https://github.com/paparyadom/Rub/blob/master/Commands/SuperUserCommands.py#L10)| None| Active users: <br/>[number] ('ip' , 'порт') - имя пользователя <br/> Stored users: <br/> имя пользователя  <br/> ... | None | Отображение списка подключенных пользователей и сохраненных|
-|[delr](https://github.com/paparyadom/Rub/blob/master/Commands/SuperUserCommands.py#L98)|delr имя пользователя -[rwx] путь до каталога или файла | UserData(uid='имя пользователя', current_path='текущий каталог', restrictions={'w': ['...'], 'r': ['...'], 'x': ['...']}, home_path='домашний каталог') | None | удаление запретов пользователя|  
-|[setr](https://github.com/paparyadom/Rub/blob/master/Commands/SuperUserCommands.py#L58)|setr имя пользователя -[rwx] путь до каталога или файла | UserData(uid='имя пользователя', current_path='текущий каталог', restrictions={'w': ['...'], 'r': ['...'], 'x': ['...']}, home_path='домашний каталог') | None | добавление запретов пользователя|  
-|[uinf](https://github.com/paparyadom/Rub/blob/master/Commands/SuperUserCommands.py#L28)|имя пользователя| User 'имя' info:<br/> uid - имя<br/>current_path - 'текущий каталог'<br/>restrictions - словарь с правами доступа<br/>home_path - домашний каталог|None|Вывод информации о пользователе|
+|[delr](https://github.com/paparyadom/Rub/blob/master/Commands/SuperUserCommands.py#L98)|delr имя пользователя -[rwx] путь до каталога или файла | UserData(uid='имя пользователя', current_path='текущий каталог', restrictions={'w': ['...'], 'r': ['...'], 'x': ['...']}, home_path='домашний каталог') | *Если пользователь не найден | удаление запретов пользователя|  
+|[setr](https://github.com/paparyadom/Rub/blob/master/Commands/SuperUserCommands.py#L58)|setr имя пользователя -[rwx] путь до каталога или файла | UserData(uid='имя пользователя', current_path='текущий каталог', restrictions={'w': ['...'], 'r': ['...'], 'x': ['...']}, home_path='домашний каталог') |*Если пользователь не найден| добавление запретов пользователя|  
+|[uinf](https://github.com/paparyadom/Rub/blob/master/Commands/SuperUserCommands.py#L28)|имя пользователя| User 'имя' info:<br/> uid - имя<br/>current_path - 'текущий каталог'<br/>restrictions - словарь с правами доступа<br/>home_path - домашний каталог|*Если пользователь не найден|Вывод информации о пользователе|
 
 
 
