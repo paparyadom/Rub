@@ -4,7 +4,7 @@
 * В зависимости от команды сервер отсылает пользователю информационное сообщение о статусе выполнения
 * Если команда не известна серверу, он высылает в ответ ошибку с сообщением: `no such command`.
   
-Для организации связи реализовано два протокола SimpleProto и TCD8. При подключении пользователя сервер отправляет [запрос "id?"](https://github.com/paparyadom/Rub/blob/master/Protocols/BaseProtocol.py#L10) для получения id пользователя
+Для организации связи реализовано два протокола: SimpleProto и TCD8. При подключении пользователя сервер отправляет [запрос "id?"](https://github.com/paparyadom/Rub/blob/master/Protocols/BaseProtocol.py#L10) для получения id пользователя
 
 ### SimpleProto
 Данный протокол отправялет данные "как есть" - без дополнительных полей. 
@@ -27,6 +27,7 @@
 ### Поддерживаемые команды
 | Команда     | Тело команды                 | Тело ответа             | Ошибки        | Описание        |
 |-------------|------------------------------|-------------------------|---------------|-----------------|
+|[help](https://github.com/paparyadom/Rub/blob/master/InputHandler.py#L19)|команда|справка о команде в теле команды|*Если введена неверная команда|Получение справки|
 | [whoami](https://github.com/paparyadom/Rub/blob/master/Commands/UserCommands.py#L252)      | None                        |**id** = id пользователя<br/> **Restrictions** = словарь с установленными правами доступа<br/>**current path** = текущий каталог <br/>**home path** = домашний каталог<br/>**address** = (ip адрес, порт) | None| Информация о пользователе |
 | [where](https://github.com/paparyadom/Rub/blob/master/Commands/UserCommands.py#L24)       	|None														|[>] you are now in "путь"						|None|Отображение пути текущего каталога|
 | [list](https://github.com/paparyadom/Rub/blob/master/Commands/UserCommands.py#L53)    		|None или абсолютный путь или относительный путь			|[>] 'путь'<br/>folder> .. каталог<br/>> .. файл|*Если указан несуществующий каталог| Отображение списка папок и файлов|
