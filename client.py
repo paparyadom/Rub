@@ -19,7 +19,7 @@ class Client:
         self.connected = True
 
     @staticmethod
-    def printer(data):
+    def printer(data:bytes):
         if len(data) == 0:
             print(f'[r]\nno data')
         else:
@@ -49,6 +49,7 @@ class Client:
                     break
                 elif request.startswith('send'):
                     try:
+                        self.sock.settimeout(None)
                         self.__proto.file_send_request(csock=self.sock, request=request)
                     except Exception as E:
                         print(E)
@@ -58,11 +59,9 @@ class Client:
                 try:
                     data = self.__proto.receive_reply(self.sock)
                 except Exception as e:
+                    data = b'no data'
                     print(e)
-
-
                 Client.printer(data)
-
             self.end_connection()
             break
 
@@ -78,11 +77,11 @@ if __name__ == '__main__':
     try:
         host, port = sys.argv[1:]
     except:
-        host, port = '', 5455
-    finally:
-        client = Client(proto=TCD8())
-        client.connect('localhost', 5455)
+        host, port = '', 5454
+
     try:
+        client = Client(proto=TCD8())
+        client.connect(host, int(port))
         client.communicate()
     except Exception as E:
-        print(E)
+        print('No response from server')

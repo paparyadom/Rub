@@ -7,16 +7,14 @@ from typing import Tuple
 
 class BaseProtocol(object):
     # SERVER SIDE
-    @abstractmethod
     def handshake(self, usock: socket.socket) -> str:
         '''
-
-        Args:
-            usock: user socket
-
-        Returns: user id as str
-
+        Recevie user id when user starts session
+        may be should be reworked
         '''
+        usock.sendall('id?'.encode())
+        user_id = usock.recv(128)
+        return user_id.decode()
 
     @abstractmethod
     def receive_data(self, usock: socket.socket) -> Tuple[bool, bytes, int]:
@@ -37,7 +35,7 @@ class BaseProtocol(object):
         '''
         pass
 
-    #client side
+    # client side
     @abstractmethod
     def receive_reply(self, csock: socket.socket) -> bytes:
         '''
@@ -51,14 +49,6 @@ class BaseProtocol(object):
 
 
 class TCD8(BaseProtocol):
-    def handshake(self, usock: socket.socket) -> str:
-        '''
-        Recevie user id when user starts session
-        may be should be reworked
-        '''
-        usock.sendall('id?'.encode())
-        user_id = usock.recv(128)
-        return user_id.decode()
 
     def receive_data(self, usock: socket.socket) -> Tuple[bool, bytes, int]:
         '''
@@ -145,7 +135,6 @@ class TCD8(BaseProtocol):
         return data
 
     def file_send_request(self, csock: socket.socket, request: str):
-        csock.settimeout(None)
         command, _from, *_to = request.split()
         file_size = Path(_from).stat().st_size
         t_length = struct.pack('>Q', len(request) + 8)
@@ -168,22 +157,12 @@ class TCD8(BaseProtocol):
             with open(_from, 'rb') as f:
                 f.seek(cursor)
                 csock.sendall(f.read())
-            csock.settimeout(.05)
 
         send_file(_from, pre_send_request())
 
 
 class SimpleProto(BaseProtocol):
     # SERVER SIDE
-    def handshake(self, usock: socket.socket) -> str:
-        '''
-        Recevie user id when user starts session
-        may be should be reworked
-        '''
-        usock.sendall('id?'.encode())
-        user_id = usock.recv(128)
-        return user_id.decode()
-
     def receive_data(self, usock: socket.socket) -> Tuple[bool, bytes, int]:
         '''
         dumb reading data from socket
@@ -234,7 +213,7 @@ class SimpleProto(BaseProtocol):
             print(f'[x] client suddenly closed, can not send')
         print(f'...>> {data} to: {addr}')
 
-    #CLIENT SIDE
+    # CLIENT SIDE
     def send_request(self, csock: socket.socket, request: str):
         '''
         dumb sending data to socket

@@ -5,7 +5,6 @@ from typing import Tuple, Any
 from Commands.SuperUserCommands import SuperUserCommands as SUC
 from Commands.UserCommands import Packet, UserCommands as UC
 from users import User, SuperUser
-from pathlib import Path
 
 one_arg_template = r'^([a-z]+)\s((\"(.*)\")|([a-zA-z].*)|(/.*)|((.|\s+)*))'
 send_file_template = r'^([a-z]+)\s((\"(.*)\")|([a-zA-z].*)|(/.*)|((.|\s+)*))'  # TO DO
@@ -75,13 +74,13 @@ class InputsHandler:
         otherwise split incoming command by spaces and return result
         '''
         _command = command.decode()
-        # _command = _command.strip() # in case of Putty
+        _command = _command.strip()  # in case of putty
 
         cmd_word_length = _command.find(' ')  # find first space to extract command word
         if cmd_word_length == -1:
             return _command,
         else:
-            cmd = _command[:cmd_word_length]  # getting args
+            cmd = _command[:cmd_word_length]  # getting body
             if cmd in one_arg_fnc:
                 groups = re.search(one_arg_template, _command)
                 return groups.group(1), groups.group(2)
@@ -95,8 +94,8 @@ class InputsHandler:
             return UC.open(packet) if isinstance(user, User) else SUC.open(packet)
         else:
             send_func = UC.send if isinstance(user, User) else SUC.send
-            cursor, fnc = send_func(packet=packet, check_fragmentation=True)
+            cursor, sender = send_func(packet=packet, check_fragmentation=True)
             proto.send_data(user.sock, struct.pack('>Q', cursor))
             qstatus, command, data_length = proto.receive_data(user.sock)
             packet = Packet(user=user, cmd_tail=('',), data_length=data_length)
-            return fnc(packet=packet)
+            return sender(packet=packet)

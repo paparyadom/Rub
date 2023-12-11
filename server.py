@@ -4,7 +4,7 @@ import socket
 import sys
 from types import GeneratorType
 from typing import Union
-
+import threading
 import select
 
 from InputHandler import InputsHandler
@@ -44,7 +44,6 @@ class Server:
             for sock in readable:
                 if sock is self.ssock:
                     sock, addr = self.ssock.accept()  # accept connection from user
-                    # uid = self.Proto.handshake(sock)
                     self.UsersSessionHandler.check_user(addr, sock, self.Proto.handshake(sock))  # check user
                     self.logger.info(f'connected by {addr}')
                     self.inputs.append(sock)
@@ -64,7 +63,7 @@ class Server:
         handle queries from users
         '''
         qstatus, command, data_length = self.Proto.receive_data(user.sock)
-        if command and command != b'exit':
+        if command and not command.startswith(b'exit'):
             if command.startswith((b'send', b'open')):
                 output_data = self.__InputsHandler.handle_files(user, command, data_length, self.Proto)
             else:
@@ -88,6 +87,7 @@ class Server:
         return True
 
     def stop(self):
+
         sessions = set(addr for addr in self.UsersSessionHandler.active_sessions.keys())
         for addr in sessions:
             self.UsersSessionHandler.end_user_session(addr)
@@ -102,7 +102,7 @@ class Server:
     def __init_socket(host: str, port: int) -> socket.socket:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.bind((host, port))
-        sock.listen(10)
+        sock.listen(1)
         return sock
 
     @staticmethod
@@ -123,7 +123,6 @@ if __name__ == '__main__':
         host, port = '', 5455
     finally:
         server = Server(host, port, proto=TCD8())
-
     try:
         server.run()
     except KeyboardInterrupt:

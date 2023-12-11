@@ -236,7 +236,7 @@ class UserCommands:
                 return f'[!] you have no permission to {path}'.encode()
             try:
                 status = Path(path).stat()
-                res = (f'{path} info:\n\t'
+                res = (f'[>] {path} info:\n\t'
                        f'Size: {status.st_size} bytes\n\t'
                        f'Permissions:{stat.filemode(status.st_mode)}\n\t'
                        f'Owner:{status.st_uid}\n\t'
