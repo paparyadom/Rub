@@ -16,15 +16,19 @@ class UserData(NamedTuple):
 
 class SaveLoader:
     @abstractmethod
-    def create_user(self, uid: str) -> UserData:
+    async def create_user(self, uid: str) -> UserData:
         pass
 
     @abstractmethod
-    def load_user(self, uid: str) -> UserData:
+    async def load_user(self, uid: str) -> UserData:
         pass
 
     @abstractmethod
-    def save_user_data(self, udata: UserData):
+    async def save_user_data(self, udata: UserData):
+        pass
+
+    @abstractmethod
+    async def is_new_user(self, uid: str) -> bool:
         pass
 
 
@@ -35,7 +39,7 @@ class JsonSaveLoader(SaveLoader):
     def __init__(self, storage_path: str):
         self.__storage_path = Path(storage_path)
 
-    def create_user(self, uid: str) -> UserData:
+    async def create_user(self, uid: str) -> UserData:
         '''
         Firstly create new folder named "uid" in self.__storage_path
         Then create udata.json file with user data:
@@ -61,7 +65,7 @@ class JsonSaveLoader(SaveLoader):
 
         return UserData(uid, udata[uid]['current_path'], udata[uid]['restrictions'], udata[uid]['home_path'])
 
-    def load_user(self, uid: str) -> UserData:
+    async def load_user(self, uid: str) -> UserData:
         '''
         Loading user data by uid from "self.__storage_path\\uid\\udata.json"
         return namedtuple UserData
@@ -75,7 +79,7 @@ class JsonSaveLoader(SaveLoader):
                          json_udata[uid]['home_path'])
         return udata
 
-    def save_user_data(self, udata: UserData):
+    async def save_user_data(self, udata: UserData):
         '''
         Save user`s data in json format in "self.__storage_path\\uid in udata.json
 
@@ -91,7 +95,7 @@ class JsonSaveLoader(SaveLoader):
             json.dump(_udata, f)
         print(f'[i] user {udata.uid} was successfully saved')
 
-    def is_new_user(self, uid: str) -> bool:
+    async def is_new_user(self, uid: str) -> bool:
         '''
         Check if connected user is new user or already connected before
         '''

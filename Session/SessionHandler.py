@@ -1,9 +1,13 @@
-import socket
-from typing import Dict, Set, Tuple
+import asyncio
+from typing import Set, Tuple
 
-import Saveloader
-from Saveloader.SaveLoader import JsonSaveLoader, UserData
+from Saveloader.SaveLoader import *
 from users import User, SuperUser
+
+
+class URW(NamedTuple):
+    reader: asyncio.StreamReader
+    writer: asyncio.StreamWriter
 
 
 class UsersSessionHandler:
@@ -22,7 +26,7 @@ class UsersSessionHandler:
                                                     to json file
      '''
 
-    def __init__(self, UserDataHandler: Saveloader.SaveLoader, super_users: Set[str] = {}):
+    def __init__(self, UserDataHandler: SaveLoader, super_users: Set[str] = set()):
         self.__active_sessions: Dict[Tuple[str], User] = dict()
         self.__UserDataHandler = UserDataHandler
         self.__super_users = super_users
@@ -46,18 +50,19 @@ class UsersSessionHandler:
         '''
         return self.__active_sessions[addr]
 
-    def check_user(self, addr: Tuple, sock: socket.socket, uid: str):
+    async def check_user(self, reader, writer, uid: str):
         '''
         Read Class doc
         '''
+        addr = writer.get_extra_info("peername")
         if addr not in self.__active_sessions:
-            if self.__UserDataHandler.is_new_user(uid):
-                udata = self.__UserDataHandler.create_user(uid)
+            if await self.__UserDataHandler.is_new_user(uid):
+                udata = await self.__UserDataHandler.create_user(uid)
             else:
-                udata = self.__UserDataHandler.load_user(uid)
-            self.__add_user_to_session(addr, sock, udata)
+                udata = await self.__UserDataHandler.load_user(uid)
+            self.__add_user_to_session(addr, reader, writer, udata)
 
-    def __add_user_to_session(self, addr: Tuple, sock: socket.socket, udata: UserData):
+    def __add_user_to_session(self, addr: Tuple, reader, writer, udata: UserData):
         '''
         Add User or SuperUser object (depends on uid) to session
         '''
@@ -67,19 +72,19 @@ class UsersSessionHandler:
                              uid=udata.uid,
                              current_path=udata.current_path,
                              home_path=udata.home_path,
-                             sock=sock,
+                             sock=URW(reader=reader, writer=writer),
                              addr=addr)
         else:
             user = User(uid=udata.uid,
                         restrictions=udata.restrictions,
                         current_path=udata.current_path,
                         home_path=udata.home_path,
-                        sock=sock,
+                        sock=URW(reader=reader, writer=writer),
                         addr=addr)
 
         self.__active_sessions[addr] = user
 
-    def end_user_session(self, addr: Tuple):
+    async def end_user_session(self, addr: Tuple):
         '''
         In the end of session:
         - save user data
@@ -87,7 +92,8 @@ class UsersSessionHandler:
         '''
         user = self.__active_sessions[addr]
         udata = UserData(user.uid, user.current_path, user.restrictions, user.home_path)
-        self.__UserDataHandler.save_user_data(udata)
+        await self.__UserDataHandler.save_user_data(udata)
+        user.sock.writer.close()
         self.__active_sessions.pop(addr)
 
     def __str__(self):
@@ -95,4 +101,3 @@ class UsersSessionHandler:
         for snum, session in enumerate(self.__active_sessions.keys(), start=1):
             sessions += f'[{snum}] {session} - {self.__active_sessions[session].uid}\n'
         return sessions
-

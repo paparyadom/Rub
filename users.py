@@ -7,7 +7,7 @@ from Saveloader.SaveLoader import JsonSaveLoader
 
 
 class User:
-    def __init__(self, uid: str, addr: Tuple, sock: socket.socket, current_path: str, restrictions: Dict,
+    def __init__(self, uid: str, addr: Tuple, sock: Tuple, current_path: str, restrictions: Dict,
                  home_path: str = None):
         self.__id = uid
         self.__current_path = current_path

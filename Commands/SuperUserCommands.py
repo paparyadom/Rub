@@ -7,7 +7,7 @@ from users import SuperUser
 
 class SuperUserCommands(UserCommands):
     @staticmethod
-    def acts(packet: Packet) -> bytes:
+    async def acts(packet: Packet) -> bytes:
         '''
         acts - display list of active sessions with (IP , port) - username and
                 stored users.
@@ -25,7 +25,7 @@ class SuperUserCommands(UserCommands):
         return f'{packet.user.SessionHandler.__str__()}\n{packet.user.DataHandler.get_users()}'.encode()
 
     @staticmethod
-    def uinf(packet: Packet) -> bytes:
+    async def uinf(packet: Packet) -> bytes:
         '''
         uinf - display information about concrete user
 
@@ -55,7 +55,7 @@ class SuperUserCommands(UserCommands):
         return f'{user_info}'.encode()
 
     @staticmethod
-    def setr(packet: Packet) -> bytes:
+    async def setr(packet: Packet) -> bytes:
         '''
         setr - add restrictions to user. (e.g. setr foo -rwx D:\folder)
         '''
@@ -95,7 +95,7 @@ class SuperUserCommands(UserCommands):
         return str(udata).encode()
 
     @staticmethod
-    def delr(packet: Packet) -> bytes:
+    async def delr(packet: Packet) -> bytes:
         '''
         delr - delete users`s restrictions (e.g. delr foo -rwx D:\folder)
         '''

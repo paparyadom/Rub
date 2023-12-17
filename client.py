@@ -1,9 +1,5 @@
 from Protocols.BaseProtocol import *
 
-# UUID = '628c93f2-8d44-11ee-9706-07b2e7b92ea1'
-UUID = 'superuser'
-# UUID = 'foo'
-# UUID = 'bar'
 
 class Client:
     def __init__(self, proto: BaseProtocol):
@@ -21,12 +17,12 @@ class Client:
     @staticmethod
     def printer(data:bytes):
         if len(data) == 0:
-            print(f'[r]\nno data')
+            print(f'...>> no data')
         else:
             try:
-                print(f'[r]\n{data.decode()}')
+                print(f'...>> {data.decode()}')
             except:
-                print(f'[r]\n{data}')
+                print(f'...>> {data}')
 
     def end_connection(self):
         self.sock.close()
@@ -73,14 +69,15 @@ class Client:
 
 if __name__ == '__main__':
     import sys
+    Protocols = {'simple': SimpleProto,
+                 'tcd8': TCD8}
 
     try:
-        host, port = sys.argv[1:]
+        host, port, proto, UUID = sys.argv[1:]
     except:
-        host, port = '', 5454
-
+        host, port, proto, UUID = '', 3232, Protocols['tcd8'], 'superuser'
     try:
-        client = Client(proto=TCD8())
+        client = Client(proto=Protocols[proto]())
         client.connect(host, int(port))
         client.communicate()
     except Exception as E:

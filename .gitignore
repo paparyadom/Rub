@@ -5,3 +5,4 @@ __*
 tets.py
 *.MP4
 client_foo.py
+/cfg

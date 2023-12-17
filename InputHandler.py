@@ -3,12 +3,13 @@ import struct
 from typing import Tuple, Any
 
 from Commands.SuperUserCommands import SuperUserCommands as SUC
-from Commands.UserCommands import Packet, UserCommands as UC
+from Commands.UserCommands import Packet, ERR, UserCommands as UC
 from users import User, SuperUser
 
-one_arg_template = r'^([a-z]+)\s((\"(.*)\")|([a-zA-z].*)|(/.*)|((.|\s+)*))'
-send_file_template = r'^([a-z]+)\s((\"(.*)\")|([a-zA-z].*)|(/.*)|((.|\s+)*))'  # TO DO
-one_arg_fnc = ('jump', 'list', 'where', 'open', 'nefo', 'defo', 'defi', 'info')
+one_arg_template = r'^((\"(.*)\")|([a-zA-z].*)|(/.*)|((.|\s+)*))'
+send_file_template = r'^((\"(.*)\")|(/(.*))|([a-zA-z].*))\s(.*)'
+one_arg_fncs = ('jump', 'list', 'where', 'open', 'nefo', 'defo', 'defi', 'info')
+send_file_fncs = ('send')
 
 
 class InputsHandler:
@@ -40,7 +41,7 @@ class InputsHandler:
             return short_help.encode()
 
     @staticmethod
-    def handle_text_command(user: User | SuperUser, command: bytes, data_length: int) -> bytes:
+    async def handle_text_command(user: User | SuperUser, command: bytes, data_length: int) -> bytes:
         '''
 
         Args:
@@ -57,14 +58,14 @@ class InputsHandler:
         if cmd == 'help':
             return InputsHandler.get_help(packet)
         if isinstance(user, SuperUser):
-            return getattr(SUC, cmd)(packet=packet) if hasattr(SUC, cmd) \
-                else f'[!] no such command {cmd}'.encode()
+            return await getattr(SUC, cmd)(packet=packet) if hasattr(SUC, cmd) \
+                else ERR.UNKNOWN_COMMAND
         else:
-            return getattr(UC, cmd)(packet=packet) if hasattr(UC, cmd) \
-                else f'[!] no such command {cmd}'.encode()
+            return await getattr(UC, cmd)(packet=packet) if hasattr(UC, cmd) \
+                else ERR.UNKNOWN_COMMAND
 
     @staticmethod
-    def parse_data(command: bytes) -> Tuple[str] | Tuple[str | Any, str | Any]:
+    def parse_data(command: bytes) -> Tuple[str] | Tuple[str | Any, ...]:
         '''
         Extract from user command "command" (this command defines target function) and "command args".
         If got single command return Tuple(command as str)
@@ -75,27 +76,39 @@ class InputsHandler:
         '''
         _command = command.decode()
         _command = _command.strip()  # in case of putty
-
-        cmd_word_length = _command.find(' ')  # find first space to extract command word
-        if cmd_word_length == -1:
+        command_word_length = _command.find(' ')  # find first space to extract command word
+        if command_word_length == -1:
             return _command,
         else:
-            cmd = _command[:cmd_word_length]  # getting body
-            if cmd in one_arg_fnc:
-                groups = re.search(one_arg_template, _command)
-                return groups.group(1), groups.group(2)
+            cmd = _command[:command_word_length]  # getting body
+            if cmd in one_arg_fncs:
+                groups = re.search(one_arg_template, _command[command_word_length + 1:])
+                return cmd, groups.group(1)
+            elif cmd in send_file_fncs:
+                groups = re.search(send_file_template, _command[command_word_length + 1:])
+                if groups is None:
+                    return cmd, _command[command_word_length + 1:], None
+                else:
+                    return cmd, groups.group(1), groups.group(7)
             return tuple(_command.split())
 
     @staticmethod
-    def handle_files(user: User | SuperUser, command: bytes, data_length: int, proto) -> bytes:
+    async def handle_files(user: User | SuperUser, command: bytes, data_length: int, proto) -> bytes:
         cmd, *cmd_tail = InputsHandler.parse_data(command)
         packet = Packet(user=user, cmd_tail=cmd_tail, data_length=data_length)
         if cmd == 'open':
-            return UC.open(packet) if isinstance(user, User) else SUC.open(packet)
+            return await UC.open(packet) if isinstance(user, User) else await SUC.open(packet)
         else:
             send_func = UC.send if isinstance(user, User) else SUC.send
-            cursor, sender = send_func(packet=packet, check_fragmentation=True)
-            proto.send_data(user.sock, struct.pack('>Q', cursor))
-            qstatus, command, data_length = proto.receive_data(user.sock)
-            packet = Packet(user=user, cmd_tail=('',), data_length=data_length)
-            return sender(packet=packet)
+            saver, cursor = await send_func(packet=packet, check_fragmentation=True)
+            if saver: # if got function
+                await proto.send_data(user.sock.reader, user.sock.writer, struct.pack('>Q', cursor), with_ack=True,ack=True)
+                command, data_length = await proto.receive_data(user.sock.reader, user.sock.writer)
+                packet = Packet(user=user, cmd_tail=('',), data_length=data_length)
+                return await saver(packet=packet)
+            else:
+                await proto.send_data(user.sock.reader, user.sock.writer, struct.pack('>Q', 0), with_ack=True,ack=False)
+                return cursor
+
+
+
