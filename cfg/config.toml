@@ -1,1 +1,5 @@
+[conn]
+host = ""
+port = 3232
+proto = "tcd8" # avaliable simple - SimpleProto , tcd8 - TCD8
 
