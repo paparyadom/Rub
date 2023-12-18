@@ -6,13 +6,13 @@ from Commands.SuperUserCommands import SuperUserCommands as SUC
 from Commands.UserCommands import Packet, ERR, UserCommands as UC
 from users import User, SuperUser
 
-one_arg_template = r'^((\"(.*)\")|([a-zA-z].*)|(/.*)|((.|\s+)*))'
-send_file_template = r'^((\"(.*)\")|(/(.*))|([a-zA-z].*))\s(.*)'
-one_arg_fncs = ('jump', 'list', 'where', 'open', 'nefo', 'defo', 'defi', 'info')
-send_file_fncs = ('send')
-
 
 class InputsHandler:
+    one_arg_template = r'^((\"(.*)\")|([a-zA-z].*)|(/.*)|((.|\s+)*))'
+    send_file_template = r'^((\"(.*)\")|(/(.*))|([a-zA-z].*))\s>\s(.*)'
+    one_arg_fn = ('jump', 'list', 'where', 'open', 'nefo', 'defo', 'defi', 'info')
+    send_file_fn = ('send')
+
     def __init__(self, super_users):
         self.__super_users = super_users
 
@@ -67,25 +67,28 @@ class InputsHandler:
     @staticmethod
     def parse_data(command: bytes) -> Tuple[str] | Tuple[str | Any, ...]:
         '''
-        Extract from user command "command" (this command defines target function) and "command args".
+        Extract from user command "command" (this command defines target function) and "command args (body)".
         If got single command return Tuple(command as str)
 
         If besides command got any arg - try to extract it using one_arg_template
         If extraction was successful - return Tuple(command as str, args as str)
         otherwise split incoming command by spaces and return result
         '''
-        _command = command.decode()
-        _command = _command.strip()  # in case of putty
+        try:
+            _command = command.decode()
+        except:
+            return ' ',
+        # _command = _command.strip()  # in case of putty
         command_word_length = _command.find(' ')  # find first space to extract command word
         if command_word_length == -1:
             return _command,
         else:
             cmd = _command[:command_word_length]  # getting body
-            if cmd in one_arg_fncs:
-                groups = re.search(one_arg_template, _command[command_word_length + 1:])
+            if cmd in InputsHandler.one_arg_fn:
+                groups = re.search(InputsHandler.one_arg_template, _command[command_word_length + 1:])
                 return cmd, groups.group(1)
-            elif cmd in send_file_fncs:
-                groups = re.search(send_file_template, _command[command_word_length + 1:])
+            elif cmd in InputsHandler.send_file_fn:
+                groups = re.search(InputsHandler.send_file_template, _command[command_word_length + 1:])
                 if groups is None:
                     return cmd, _command[command_word_length + 1:], None
                 else:
@@ -94,21 +97,36 @@ class InputsHandler:
 
     @staticmethod
     async def handle_files(user: User | SuperUser, command: bytes, data_length: int, proto) -> bytes:
+        '''
+        This function is used to handle files operations.
+        'open' function - open file -> send to user as bytes
+
+        'send' function - used to receive file from user and save it.
+
+        This functions apply standard functions from Protocols.TCD8 with 'with_ack' flag.
+        Execution steps:
+        -> receive from user packet with command 'send' and body with 'file name or path' + word 'home' or word 'here' or 'path to save'
+        -> check existing of 'path to save' and user permissions. If both of these conditions are ok - go to next step,
+        otherwise server can not execute this operation and send to user packet with ack=False and message why request was declined.
+        -> check existing fragments of sending file (file with suffix '.part')
+        -> send reply with ack=True and size of file (if we got just part of it) or 0 (if parts do not exist)
+        -> receive and save file
+        '''
         cmd, *cmd_tail = InputsHandler.parse_data(command)
         packet = Packet(user=user, cmd_tail=cmd_tail, data_length=data_length)
         if cmd == 'open':
             return await UC.open(packet) if isinstance(user, User) else await SUC.open(packet)
         else:
             send_func = UC.send if isinstance(user, User) else SUC.send
-            saver, cursor = await send_func(packet=packet, check_fragmentation=True)
-            if saver: # if got function
-                await proto.send_data(user.sock.reader, user.sock.writer, struct.pack('>Q', cursor), with_ack=True,ack=True)
+            saver_if_ok, cursor_if_ok = await send_func(packet=packet, check_fragmentation=True)
+            if saver_if_ok: # if got function
+                await proto.send_data(user.sock.reader, user.sock.writer, struct.pack('>Q', cursor_if_ok), with_ack=True,ack=True)
                 command, data_length = await proto.receive_data(user.sock.reader, user.sock.writer)
                 packet = Packet(user=user, cmd_tail=('',), data_length=data_length)
-                return await saver(packet=packet)
+                return await saver_if_ok(packet=packet)
             else:
                 await proto.send_data(user.sock.reader, user.sock.writer, struct.pack('>Q', 0), with_ack=True,ack=False)
-                return cursor
+                return cursor_if_ok
 
 
 

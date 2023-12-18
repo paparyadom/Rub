@@ -10,10 +10,10 @@ from users import User, SuperUser
 
 @dataclass
 class ERR:
-    NOT_FOUND: bytes = f'[x] no such file or path'.encode()
+    NOT_FOUND: bytes = lambda e ='':f'[x] no such file or path "{e}"'.encode()
     PERMISSION_DENIED: bytes = f'[x] you have no permission'.encode()
     EMPTY_PATH: bytes = f'[x] empty path'.encode()
-    OTHER: bytes = lambda E='': f'[x] something went wrong: {E}'.encode()
+    OTHER: bytes = lambda e ='': f'[x] something went wrong: {e}'.encode()
     UNKNOWN_COMMAND: bytes = f'[x] no such command'.encode()
     ALREADY_EXISTS: bytes = f'[x] path is already exists'.encode()
 
@@ -156,7 +156,6 @@ class UserCommands:
         send - send file to file server.
                 "send here" - send file to your current path
                 "send home" or single "send"
-
         '''
 
         cursor_position = 0
@@ -171,10 +170,10 @@ class UserCommands:
             path_to_save = Path().joinpath(_to, Path(_from).name)
 
         if not path_to_save.parent.exists():
-            return False, ERR.NOT_FOUND
+            return False, ERR.NOT_FOUND(path_to_save.__str__())
         elif not utility.is_allowed(path_to_save, packet.user.restrictions['w']):
             return False, ERR.PERMISSION_DENIED
-        else:
+        else:   # try to find parts of file
             if check_fragmentation:
                 fragmented_path = Path(path_to_save.__str__() + '.part')
                 if fragmented_path.exists():
@@ -182,7 +181,17 @@ class UserCommands:
                     path_to_save = fragmented_path
                     mode = 'ab'
 
-        async def saver(packet: Packet, chunk: int = 8192):
+        async def saver(packet: Packet, chunk: int = 8192) -> bytes:
+            '''
+            'saver' function implements saving whole file or part of it.
+            If there is no part of file - open file with mode 'wb' and write file data.
+            If there is a connection failure during downloading - just save read data to filename.extension.part
+            If we got part of file - just open existing file in 'ab' mode add data there
+
+            When the whole file is downloaded - trim '.part' from file name
+            '''
+            saved_to = path_to_save.__str__()
+            parted = False
             try:
                 with open(path_to_save, mode) as f:
                     already_read = 0
@@ -198,12 +207,15 @@ class UserCommands:
                             f.close()
                             if path_to_save.suffix != '.part':
                                 path_to_save.rename(path_to_save.__str__() + '.part')
+                                saved_to = path_to_save.__str__() + '.part'
+                            parted = True
                             break
-                if mode == 'ab':
+                if mode == 'ab' and parted is False:
                     path_to_save.rename(path_to_save.__str__()[:-5])
+                    saved_to = path_to_save.__str__()[:-5]
             except Exception as E:
                 return ERR.OTHER(E)
-            return f'[>] file was successfully saved to "{path_to_save.__str__()}" '.encode()
+            return f'[>] file was successfully saved to "{saved_to}" '.encode()
         return saver, cursor_position
 
     @staticmethod

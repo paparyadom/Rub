@@ -164,6 +164,8 @@ class TCD8(BaseProtocol):
         def send_file(_from, cursor):
             (_cursor,) = struct.unpack('>Q', cursor)
             file_size = Path(_from).stat().st_size
+            if _cursor > file_size:
+                _cursor = 0
             t_length = struct.pack('>Q', len(request) + 8)
             req_length = struct.pack('>Q', len(request))
             data_length = struct.pack('>Q', file_size - _cursor)
