@@ -13,9 +13,6 @@ class InputsHandler:
     one_arg_fn = ('jump', 'list', 'where', 'open', 'nefo', 'defo', 'defi', 'info')
     send_file_fn = ('send')
 
-    def __init__(self, super_users):
-        self.__super_users = super_users
-
     @staticmethod
     def get_help(packet: Packet) -> bytes:
         '''
@@ -23,7 +20,7 @@ class InputsHandler:
         '''
 
         short_help = 'Avaliable commands:\n'
-        if packet.user.uid == 'superuser':
+        if isinstance(packet.user, SuperUser):
             cmd_list = SUC
         else:
             cmd_list = UC
@@ -78,7 +75,7 @@ class InputsHandler:
             _command = command.decode()
         except:
             return ' ',
-        # _command = _command.strip()  # in case of putty
+        _command = _command.strip()  # in case of putty
         command_word_length = _command.find(' ')  # find first space to extract command word
         if command_word_length == -1:
             return _command,
@@ -116,16 +113,16 @@ class InputsHandler:
         packet = Packet(user=user, cmd_tail=cmd_tail, data_length=data_length)
         if cmd == 'open':
             return await UC.open(packet) if isinstance(user, User) else await SUC.open(packet)
-        else:
+        elif cmd == 'send':
             send_func = UC.send if isinstance(user, User) else SUC.send
             saver_if_ok, cursor_if_ok = await send_func(packet=packet, check_fragmentation=True)
-            if saver_if_ok: # if got function
-                await proto.send_data(user.sock.reader, user.sock.writer, struct.pack('>Q', cursor_if_ok), with_ack=True,ack=True)
+            if saver_if_ok:  # if got function
+                await proto.send_data(user.sock.reader, user.sock.writer, struct.pack('>Q', cursor_if_ok), with_ack=True, ack=True)
                 command, data_length = await proto.receive_data(user.sock.reader, user.sock.writer)
                 packet = Packet(user=user, cmd_tail=('',), data_length=data_length)
                 return await saver_if_ok(packet=packet)
             else:
-                await proto.send_data(user.sock.reader, user.sock.writer, struct.pack('>Q', 0), with_ack=True,ack=False)
+                await proto.send_data(user.sock.reader, user.sock.writer, struct.pack('>Q', 0), with_ack=True, ack=False)
                 return cursor_if_ok
 
 

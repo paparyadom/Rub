@@ -10,7 +10,7 @@ from users import User, SuperUser
 
 @dataclass
 class ERR:
-    NOT_FOUND: bytes = lambda e ='':f'[x] no such file or path "{e}"'.encode()
+    NOT_FOUND: bytes = lambda e ='': f'[x] no such file or path "{e}"'.encode()
     PERMISSION_DENIED: bytes = f'[x] you have no permission'.encode()
     EMPTY_PATH: bytes = f'[x] empty path'.encode()
     OTHER: bytes = lambda e ='': f'[x] something went wrong: {e}'.encode()
@@ -50,7 +50,7 @@ class UserCommands:
         '''
 
         if not packet.cmd_tail:
-            return ERR.NOT_FOUND
+            return ERR.EMPTY_PATH
         else:
             path = Path(utility.define_path(packet.cmd_tail[0], packet.user.current_path))
             if Path(path).is_file():
@@ -59,7 +59,7 @@ class UserCommands:
                 file_size = Path(path).stat()
                 return utility.gen_chunk_read(path.__str__()), file_size.st_size
             else:
-                return ERR.NOT_FOUND
+                return ERR.NOT_FOUND(packet.cmd_tail[0])
 
     @staticmethod
     async def list(packet: Packet) -> bytes:
@@ -77,7 +77,7 @@ class UserCommands:
             try:
                 res = utility.walk_around_folder(path.__str__())
             except:
-                return ERR.NOT_FOUND
+                return ERR.NOT_FOUND(packet.cmd_tail[0])
         else:
             path = Path(packet.user.current_path)
             if not utility.is_allowed(path, packet.user.restrictions['x']):
@@ -154,8 +154,8 @@ class UserCommands:
     async def send(packet: Packet, check_fragmentation: bool) -> Tuple[Callable, int] | Tuple[bool, bytes]:
         '''
         send - send file to file server.
-                "send here" - send file to your current path
-                "send home" or single "send"
+                "send > here" - send file to your current path
+                "send > home"
         '''
 
         cursor_position = 0
@@ -241,7 +241,7 @@ class UserCommands:
             packet.user.current_path = path.__str__()
             res = f'[>] path changed to {path.__str__()}'.encode()
         else:
-            res = ERR.NOT_FOUND
+            res = ERR.NOT_FOUND(packet.cmd_tail[0])
         return res
 
     @staticmethod
@@ -272,4 +272,7 @@ class UserCommands:
 
     @staticmethod
     async def whoami(packet: Packet) -> bytes:
+        '''
+        whoami - information about user
+        '''
         return packet.user.get_full_info().encode()

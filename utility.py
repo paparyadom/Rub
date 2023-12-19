@@ -14,7 +14,7 @@ def walk_around_folder(abs_path: str, as_str: bool = True) -> str | Tuple:
     return f'[>] {abs_path} \n{obj_list}' if as_str else (path, folders, files)
 
 
-def gen_chunk_read(file_path: str, chunk_size: int = 4096) -> Generator:
+async def gen_chunk_read(file_path: str, chunk_size: int = 4096) -> Generator:
     '''
     path_to_file: asbsolute path to file
     chunk_size: size of chunk

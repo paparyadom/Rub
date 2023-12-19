@@ -2,7 +2,6 @@ from typing import Dict, List
 
 from Commands.UserCommands import Packet, UserCommands
 from Saveloader.SaveLoader import UserData
-from users import SuperUser
 
 
 class SuperUserCommands(UserCommands):
@@ -47,7 +46,7 @@ class SuperUserCommands(UserCommands):
                     user_info += f'{key} - {value}\n'
                 return f'"{user_info}"'.encode()
         try:
-            udata: UserData = packet.user.DataHandler.load_user(target_uid)
+            udata: UserData = await packet.user.DataHandler.load_user(target_uid)
         except:
             return f'[!] no such user "{target_uid}"'.encode()
         for key, value in udata._asdict().items():
@@ -70,8 +69,11 @@ class SuperUserCommands(UserCommands):
                     if restr not in user_restrictions[mode]:
                         user_restrictions[mode].append(restr)
             return user_restrictions
+        try:
+            target_uid, modes, *restrictions = packet.cmd_tail
+        except:
+            return f'[x] not enough values. Use setr username -modes path'.encode()
 
-        target_uid, modes, *restrictions = packet.cmd_tail
 
         # firstly check if user is now online to add restrictions in current sessions
         # if user is offline - download user json data file and add restriction in
@@ -81,14 +83,15 @@ class SuperUserCommands(UserCommands):
                 return f'"{target_uid}" restrictions was changed to "{_user.restrictions}"'.encode()
 
         try:
-            udata: UserData = packet.user.DataHandler.load_user(target_uid)
-            packet.user.DataHandler.save_user_data(UserData(uid=udata.uid,
-                                                            current_path=udata.current_path,
-                                                            home_path=udata.home_path,
-                                                            restrictions=__add_restricts(udata.restrictions, modes,
-                                                                                         *restrictions)
-                                                            )
-                                                   )
+            udata: UserData = await packet.user.DataHandler.load_user(target_uid)
+            await packet.user.DataHandler.save_user_data(UserData(uid=udata.uid,
+                                                                  current_path=udata.current_path,
+                                                                  home_path=udata.home_path,
+                                                                  restrictions=__add_restricts(udata.restrictions,
+                                                                                               modes,
+                                                                                               *restrictions)
+                                                                  )
+                                                         )
 
         except Exception as E:
             return f'[!] something went wrong {E}'.encode()
@@ -111,8 +114,10 @@ class SuperUserCommands(UserCommands):
                     except Exception as E:
                         print(E)
             return user_restrictions
-
-        target_uid, modes, *restrictions = packet.cmd_tail
+        try:
+            target_uid, modes, *restrictions = packet.cmd_tail
+        except:
+            return f'[x] not enough values. Use delr username -modes path'.encode()
 
         # firstly check if user is now online to delete restrictions in current sessions
         # if user is offline - download user json data file and delete restriction in
@@ -122,14 +127,15 @@ class SuperUserCommands(UserCommands):
                 return f'"{target_uid}" restrictions was changed to "{_user.restrictions}"'.encode()
 
         try:
-            udata: UserData = packet.user.DataHandler.load_user(target_uid)
-            packet.user.DataHandler.save_user_data(UserData(uid=udata.uid,
-                                                     current_path=udata.current_path,
-                                                     home_path=udata.home_path,
-                                                     restrictions=__del_restricts(udata.restrictions, modes,
-                                                                                  *restrictions)
-                                                     )
-                                            )
+            udata: UserData = await packet.user.DataHandler.load_user(target_uid)
+            await packet.user.DataHandler.save_user_data(UserData(uid=udata.uid,
+                                                                  current_path=udata.current_path,
+                                                                  home_path=udata.home_path,
+                                                                  restrictions=__del_restricts(udata.restrictions,
+                                                                                               modes,
+                                                                                               *restrictions)
+                                                                  )
+                                                         )
         except Exception as E:
             return f'[!] something went wrong {E}'.encode()
         return str(udata).encode()

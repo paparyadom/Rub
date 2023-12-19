@@ -28,6 +28,7 @@ class BaseProtocol(object):
     async def send_file(self, reader, writer, data: bytes):
         pass
 
+    # client side
     @abstractmethod
     def send_request(self, csock: socket.socket, request: str):
         '''
@@ -35,7 +36,6 @@ class BaseProtocol(object):
         '''
         pass
 
-    # client side
     @abstractmethod
     def receive_reply(self, csock: socket.socket, with_ack=False) -> bytes | Tuple[bool, bytes]:
         '''
@@ -45,6 +45,9 @@ class BaseProtocol(object):
 
     @abstractmethod
     def file_send_request(self, csock: socket.socket, request: str):
+        '''
+         client method
+        '''
         pass
 
 
@@ -81,7 +84,8 @@ class TCD8(BaseProtocol):
         '''
         send text as bytes to user
         protocol:
-        total length [8 bytes] + status [1 byte] + data
+        total length [8 bytes] + data if with_ack == False
+        total length [8 bytes] + acknowledge [1 byte] + data if with_ack == True
         '''
         addr = writer.get_extra_info("peername")
         print(data)
@@ -115,12 +119,16 @@ class TCD8(BaseProtocol):
             length: bytes = struct.pack('>Q', file_size)
             writer.write(length)
             await writer.drain()
-            chunk = next(gen)
-            while chunk:
+            async for chunk in gen:
                 writer.write(chunk)
                 await writer.drain()
                 print(chunk)
-                chunk = next(gen)
+            # chunk = next(gen)
+            # while chunk:
+            #     writer.write(chunk)
+            #     await writer.drain()
+            #     print(chunk)
+            #     chunk = next(gen)
 
         except StopIteration:
             print(f'[i] EOF')

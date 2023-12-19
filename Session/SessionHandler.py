@@ -26,7 +26,9 @@ class UsersSessionHandler:
                                                     to json file
      '''
 
-    def __init__(self, UserDataHandler: SaveLoader, super_users: Set[str] = set()):
+    def __init__(self, UserDataHandler: SaveLoader, super_users=None):
+        if super_users is None:
+            super_users = set()
         self.__active_sessions: Dict[Tuple[str], User] = dict()
         self.__UserDataHandler = UserDataHandler
         self.__super_users = super_users
@@ -66,7 +68,7 @@ class UsersSessionHandler:
         '''
         Add User or SuperUser object (depends on uid) to session
         '''
-        if udata.uid == 'superuser':
+        if udata.uid in self.__super_users:
             user = SuperUser(DataHandler=self.__UserDataHandler,
                              SessionHandler=self,
                              uid=udata.uid,

@@ -2,8 +2,7 @@ import asyncio
 import logging
 import os
 import sys
-from types import GeneratorType
-from typing import Union
+from typing import Union, AsyncGenerator
 
 import toml
 
@@ -18,14 +17,18 @@ if not os.path.exists('storage'):
 
 
 class Server:
-    def __init__(self, host: str, port: int, proto: BaseProtocol):
+    def __init__(self, host: str, port: int, proto: BaseProtocol, super_users=None):
+        if super_users is None:
+            super_users = {'superuser', 'admin'}
         self.host = host
         self.port = port
+        self.__super_users = super_users
         self.logger = self.__init_logger()
 
-        self.__InputsHandler = InputsHandler({'superuser'})
+        self.__InputsHandler = InputsHandler()
         self.UserDataHandler = JsonSaveLoader(storage_path='storage')
-        self.UsersSessionHandler = UsersSessionHandler(self.UserDataHandler)
+        self.UsersSessionHandler = UsersSessionHandler(UserDataHandler=self.UserDataHandler,
+                                                       super_users=self.__super_users)
         self.Proto = proto
 
     async def run(self):
@@ -69,7 +72,7 @@ class Server:
 
             return False
 
-    async def __handle_answer(self, user: User, output_data: Union[GeneratorType, bytes]) -> bool:
+    async def __handle_answer(self, user: User, output_data: Union[AsyncGenerator, bytes]) -> bool:
         '''
         send text answer or file as bytes to user
         output_data is bytes for text answer
@@ -77,11 +80,15 @@ class Server:
         <class 'generator'> in case of file sending
 
         '''
-        if isinstance(output_data[0], GeneratorType):
-            await self.Proto.send_file(user.sock.reader, user.sock.writer, output_data)
-        else:
-            await self.Proto.send_data(user.sock.reader, user.sock.writer, output_data)
-        return True
+        try:
+            if isinstance(output_data[0], AsyncGenerator):
+                await self.Proto.send_file(user.sock.reader, user.sock.writer, output_data)
+            else:
+                await self.Proto.send_data(user.sock.reader, user.sock.writer, output_data)
+            return True
+        except Exception as E:
+            self.logger.error(E)
+            return False
 
     async def stop(self):
         sessions = set(addr for addr in self.UsersSessionHandler.active_sessions.keys())
@@ -103,7 +110,7 @@ if __name__ == "__main__":
     Protocols = {'simple': SimpleProto,
                  'tcd8': TCD8}
 
-    loop = asyncio.new_event_loop() # does not work correctly
+    loop = asyncio.new_event_loop()  # does not work correctly
     config = toml.load('cfg/config.toml')
     host, port, proto = config['conn'].values()
 

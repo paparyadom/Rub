@@ -36,6 +36,7 @@ class JsonSaveLoader(SaveLoader):
     '''
     This class provides saving and loading data in json format
     '''
+
     def __init__(self, storage_path: str):
         self.__storage_path = Path(storage_path)
 
@@ -58,7 +59,10 @@ class JsonSaveLoader(SaveLoader):
                        'home_path': _path.parents[0].__str__()
                        }
                  }
-        Path.mkdir(_path.parents[0])
+        try:
+            Path.mkdir(_path.parents[0])
+        except FileExistsError:
+            pass
 
         with open(_path, 'w') as f:
             json.dump(udata, f)
@@ -72,8 +76,11 @@ class JsonSaveLoader(SaveLoader):
         '''
         upath = Path(self.__storage_path, uid, 'udata.json')
 
-        with open(upath, 'r') as f:
-            json_udata = json.load(f)
+        try:
+            with open(upath, 'r') as f:
+                json_udata = json.load(f)
+        except FileNotFoundError:
+            return await self.create_user(uid)
 
         udata = UserData(uid, json_udata[uid]['current_path'], json_udata[uid]['restrictions'],
                          json_udata[uid]['home_path'])
@@ -81,7 +88,7 @@ class JsonSaveLoader(SaveLoader):
 
     async def save_user_data(self, udata: UserData):
         '''
-        Save user`s data in json format in "self.__storage_path\\uid in udata.json
+        Save user`s data in json format in "self.__storage_path\\uid as udata.json
 
         '''
         upath = Path(self.__storage_path, udata.uid, 'udata.json')
@@ -91,9 +98,13 @@ class JsonSaveLoader(SaveLoader):
                               }
                   }
 
-        with open(upath, 'w') as f:
-            json.dump(_udata, f)
-        print(f'[i] user {udata.uid} was successfully saved')
+        try:
+            with open(upath, 'w') as f:
+                json.dump(_udata, f)
+            print(f'[i] user {udata.uid} was successfully saved')
+        except FileNotFoundError:
+            print(f'[!] foo udata.json was deleted during the session')
+
 
     async def is_new_user(self, uid: str) -> bool:
         '''
@@ -107,5 +118,5 @@ class JsonSaveLoader(SaveLoader):
         Returns: list of stored users
         '''
         path, folders, files = walk_around_folder(self.__storage_path.__str__(), as_str=False)
-        user_list = 'Stored users:\n' + functools.reduce(lambda x, y: f'{x}\n{y}', folders)
-        return user_list
+        users_list = 'Stored users:\n' + functools.reduce(lambda x, y: f'{x}\n{y}', folders)
+        return users_list
