@@ -35,8 +35,8 @@
 | [nefo](https://github.com/paparyadom/Rub/blob/master/Commands/UserCommands.py#L77)   		|абсолютный путь или относительный путь каталога			|[>] successfully created folder 'путь'	|*Если указано недопустимое имя каталога| Создание нового каталога|
 | [defo](https://github.com/paparyadom/Rub/blob/master/Commands/UserCommands.py#L100)    		|абсолютный путь или относительный путь каталога			|[>] successfully deleted folder 'путь'	|*Если указано недопустимое имя каталога<br/>*Если каталог не найден| Удаление каталога |
 | [defi](https://github.com/paparyadom/Rub/blob/master/Commands/UserCommands.py#L121)    		|абсолютный путь или относительный путь файла				|[>] successfully deleted file 'путь до файла'|*Если файл не найден| Удаление файла |  
-| [open](https://github.com/paparyadom/Rub/blob/master/Commands/UserCommands.py#L31)  		|абсолютный путь или относительный путь файла				|данные файла| None| Открыть файл |    
-| [send](https://github.com/paparyadom/Rub/blob/master/Commands/UserCommands.py#L142)<br/>(только TCD8)|Путь до посылаемого файла + путь сохранения		|[>] file was successfully saved to "путь до файла" | None | Отправка файла|
+| [open](https://github.com/paparyadom/Rub/blob/master/Commands/UserCommands.py#L31)  		|абсолютный путь или относительный путь файла				|данные файла|*Если указан пустой путь до файла<br/>*Если указаного пути не существует | Открыть файл |    
+| [send](https://github.com/paparyadom/Rub/blob/master/Commands/UserCommands.py#L142)<br/>(только TCD8)|Путь до посылаемого файла или имя файла '>' путь сохранения файла		|[>] file was successfully saved to "путь до файла" | *Если путь сохранения не существует<br/>*Если стоит запрет для пользователя на запись | Отправка файла|
 
 
 ### Расширенные команды
