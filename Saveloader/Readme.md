@@ -2,9 +2,9 @@
 ## JsonSaveLoader
 Класс реализует сохранение и загузку данных пользователя в файле формата *.json.<br/>
 Структура файла:
-- {"foo": {
-    - "restrictions": {"w": [], "r": [], "x": []},
-    - "current_path": "D:\\programming\\DEV\\asynvFiley\\storage\\foo",
-    - "home_path": "D:\\programming\\DEV\\asynvFiley\\storage\\foo"
+- {"имя пользователя": {
+    - "запреты": {"w": [], "r": [], "x": []},
+    - "текущая директория": "D:\\programming\\DEV\\asynvFiley\\storage\\foo",
+    - "домашняя директория": "D:\\programming\\DEV\\asynvFiley\\storage\\foo"
    }
 }
