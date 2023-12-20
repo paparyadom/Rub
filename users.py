@@ -1,8 +1,8 @@
 import socket
 from typing import Dict, Tuple
 
-import Saveloader
-from Saveloader.SaveLoader import JsonSaveLoader
+import UserDataHandle
+from UserDataHandle.BaseSaveLoader import BaseSaveLoader
 
 
 
@@ -62,7 +62,7 @@ class User:
 
 
 class SuperUser(User):
-    def __init__(self, DataHandler: Saveloader.SaveLoader, SessionHandler, **kwargs):
+    def __init__(self, DataHandler: BaseSaveLoader, SessionHandler, **kwargs):
         super().__init__(restrictions={'w': ['...'], 'r': ['...'], 'x': ['...']}, **kwargs)
         self._DataHandler = DataHandler
         self._SessionHandler = SessionHandler

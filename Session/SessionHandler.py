@@ -1,7 +1,7 @@
 import asyncio
-from typing import Set, Tuple
+from typing import Dict, NamedTuple, Tuple
 
-from Saveloader.SaveLoader import *
+from UserDataHandle.BaseSaveLoader import BaseSaveLoader, UserData
 from users import User, SuperUser
 
 
@@ -26,7 +26,7 @@ class UsersSessionHandler:
                                                     to json file
      '''
 
-    def __init__(self, UserDataHandler: SaveLoader, super_users=None):
+    def __init__(self, UserDataHandler: BaseSaveLoader, super_users=None):
         if super_users is None:
             super_users = set()
         self.__active_sessions: Dict[Tuple[str], User] = dict()

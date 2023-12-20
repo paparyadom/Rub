@@ -1,7 +1,7 @@
 from typing import Dict, List
 
 from Commands.UserCommands import Packet, UserCommands
-from Saveloader.SaveLoader import UserData
+from UserDataHandle.BaseSaveLoader import UserData
 
 
 class SuperUserCommands(UserCommands):
@@ -21,7 +21,7 @@ class SuperUserCommands(UserCommands):
                 foo
                 superuser
         '''
-        return f'{packet.user.SessionHandler.__str__()}\n{packet.user.DataHandler.get_users()}'.encode()
+        return f'{packet.user.SessionHandler.__str__()}\n{await packet.user.DataHandler.get_users()}'.encode()
 
     @staticmethod
     async def uinf(packet: Packet) -> bytes:

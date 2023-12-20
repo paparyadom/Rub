@@ -20,19 +20,13 @@ class InputsHandler:
         '''
 
         short_help = 'Avaliable commands:\n'
-        if isinstance(packet.user, SuperUser):
-            cmd_list = SUC
-        else:
-            cmd_list = UC
+        cmd_list = SUC if isinstance(packet.user, SuperUser) else UC
         _list = [method for method in dir(cmd_list) if not method.startswith('__')]
         short_help += '\n'.join(_list)
 
         if packet.cmd_tail:
             command = packet.cmd_tail[0]
-            if hasattr(cmd_list, command):
-                res = getattr(cmd_list, command).__doc__ or 'No info'
-            else:
-                res = 'no help for you'
+            res = (getattr(cmd_list, command).__doc__ or 'No info') if hasattr(cmd_list, command) else 'no help for you'
             return res.encode()
         else:
             return short_help.encode()

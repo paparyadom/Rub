@@ -2,13 +2,15 @@ import asyncio
 import logging
 import os
 import sys
-from typing import Union, AsyncGenerator
+from typing import Any, Dict, Union, AsyncGenerator
 
 import toml
 
 from InputHandler import InputsHandler
 from Protocols.BaseProtocol import *
-from Saveloader.SaveLoader import JsonSaveLoader
+from UserDataHandle import BaseSaveLoader
+from UserDataHandle.JsonSaveLoader import JsonSaveLoader
+from UserDataHandle.MongoSaveLoader import MongoSaveLoader
 from Session.SessionHandler import UsersSessionHandler
 from users import User
 
@@ -17,7 +19,7 @@ if not os.path.exists('storage'):
 
 
 class Server:
-    def __init__(self, host: str, port: int, proto: BaseProtocol, super_users=None):
+    def __init__(self, host: str, port: int, proto: BaseProtocol, saveloader: BaseSaveLoader,super_users=None):
         if super_users is None:
             super_users = {'superuser', 'admin'}
         self.host = host
@@ -26,7 +28,7 @@ class Server:
         self.logger = self.__init_logger()
 
         self.__InputsHandler = InputsHandler()
-        self.UserDataHandler = JsonSaveLoader(storage_path='storage')
+        self.UserDataHandler = saveloader
         self.UsersSessionHandler = UsersSessionHandler(UserDataHandler=self.UserDataHandler,
                                                        super_users=self.__super_users)
         self.Proto = proto
@@ -109,16 +111,19 @@ class Server:
 if __name__ == "__main__":
     Protocols = {'simple': SimpleProto,
                  'tcd8': TCD8}
+    Saveloader = {'json': JsonSaveLoader,
+                  'mongo': MongoSaveLoader}
 
     loop = asyncio.new_event_loop()  # does not work correctly
     config = toml.load('cfg/config.toml')
     host, port, proto = config['conn'].values()
+    saveloader_cfg = config['saveloader']
 
     # loop = asyncio.ProactorEventLoop()
     asyncio.set_event_loop(loop)
-    server = Server(host, port, proto=Protocols[proto]())
+    server = Server(host, port, proto=Protocols[proto](), saveloader=Saveloader[saveloader_cfg['type']](config=config['saveloader']))
 
     try:
-        loop.run_until_complete(server.run())
+        loop.run_until_complete(server.run())p
     except KeyboardInterrupt:
         loop.run_until_complete(server.stop())
