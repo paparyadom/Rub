@@ -218,6 +218,7 @@ class SimpleProto(BaseProtocol):
         addr = writer.get_extra_info("peername")
         try:
             writer.write(data)
+            writer.write(f'\n[end]'.encode())
             await writer.drain()
         except ConnectionError:
             print(f'[x] client suddenly closed, can not send')

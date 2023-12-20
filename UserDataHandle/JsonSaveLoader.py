@@ -14,8 +14,7 @@ class JsonSaveLoader(BaseSaveLoader):
 
     def __init__(self, config: Dict[str, Any]):
         self.__config = config
-        self.__storage_path = Path(self.__config['saveloader']['storage'])
-
+        self.__storage_path = Path(self.__config['storage'])
 
     async def create_user(self, uid: str) -> UserData:
         '''

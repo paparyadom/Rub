@@ -1,10 +1,10 @@
 [conn]
 host = ""
 port = 3232
-proto = "tcd8" # avaliable simple - SimpleProto , tcd8 - TCD8
+proto = "simple" # avaliable simple - SimpleProto , tcd8 - TCD8
 
 [saveloader]
-type = 'mongo' # avaliable mongo, json
+type = 'json' # avaliable mongo, json
 connection = {host  = '127.0.0.1', port = 27017, user = '', password = '', auth = false}
 db = {database = 'fsdb', collection = 'fsusers'}
 storage = 'storage'

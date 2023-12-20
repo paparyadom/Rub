@@ -10,7 +10,7 @@ from InputHandler import InputsHandler
 from Protocols.BaseProtocol import *
 from UserDataHandle import BaseSaveLoader
 from UserDataHandle.JsonSaveLoader import JsonSaveLoader
-from UserDataHandle.MongoSaveLoader import MongoSaveLoader
+# from UserDataHandle.MongoSaveLoader import MongoSaveLoader
 from Session.SessionHandler import UsersSessionHandler
 from users import User
 
@@ -112,7 +112,7 @@ if __name__ == "__main__":
     Protocols = {'simple': SimpleProto,
                  'tcd8': TCD8}
     Saveloader = {'json': JsonSaveLoader,
-                  'mongo': MongoSaveLoader}
+                  'mongo': JsonSaveLoader }  #  MongoSaveLoader
 
     loop = asyncio.new_event_loop()  # does not work correctly
     config = toml.load('cfg/config.toml')
@@ -124,6 +124,6 @@ if __name__ == "__main__":
     server = Server(host, port, proto=Protocols[proto](), saveloader=Saveloader[saveloader_cfg['type']](config=config['saveloader']))
 
     try:
-        loop.run_until_complete(server.run())p
+        loop.run_until_complete(server.run())
     except KeyboardInterrupt:
         loop.run_until_complete(server.stop())
