@@ -43,7 +43,8 @@ class Client:
                 if request.startswith('exit'):
                     self.__proto.send_request(csock=self.sock, request=request)
                     break
-                elif request.startswith('send'):
+                # elif request.startswith('send'):
+                elif request.startswith('rawsend'):
                     try:
                         self.sock.settimeout(None)
                         self.__proto.file_send_request(csock=self.sock, request=request)
@@ -75,10 +76,10 @@ if __name__ == '__main__':
     try:
         host, port, proto, UUID = sys.argv[1:]
     except:
-        host, port, proto, UUID = '', 3232, Protocols['tcd8'], 'superuser'
+        host, port, proto, UUID = 'localhost', 3232,'simple', 'bar'
     try:
         client = Client(proto=Protocols[proto]())
         client.connect(host, int(port))
         client.communicate()
     except Exception as E:
-        print('No response from server')
+        print('No response from server', {E})

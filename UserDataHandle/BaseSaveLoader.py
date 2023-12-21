@@ -5,7 +5,7 @@ from typing import Dict, List, NamedTuple
 class UserData(NamedTuple):
     uid: str
     current_path: str
-    restrictions: Dict[str, List[str]]
+    permissions: Dict[str, List[str]]
     home_path: str
 
 

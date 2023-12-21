@@ -14,13 +14,17 @@ class JsonSaveLoader(BaseSaveLoader):
 
     def __init__(self, config: Dict[str, Any]):
         self.__config = config
-        self.__storage_path = Path(self.__config['storage'])
+        self.__storage_path = Path(Path.cwd(), self.__config['storage'])
+        self.__json_config_path = Path(Path.cwd(), 'Users')
+
+        if not Path('Users').exists():
+            Path('Users').mkdir()
 
     async def create_user(self, uid: str) -> UserData:
         '''
         Firstly create new folder named "uid" in self.__storage_path
         Then create udata.json file with user data:
-        {"uid": {"restrictions": {"w": [],
+        {"uid": {"permissions": {"w": [],
                                   "r": [],
                                   "x": []},
         "current_path": by default "self.__storage_path\\uid",
@@ -29,28 +33,30 @@ class JsonSaveLoader(BaseSaveLoader):
 
         return namedtuple UserData
         '''
-        _path: Path = Path(Path.cwd(), self.__storage_path, uid, 'udata.json')
-        udata = {uid: {'restrictions': {'w': [], 'r': [], 'x': []},
-                       'current_path': _path.parents[0].__str__(),
-                       'home_path': _path.parents[0].__str__()
+        spath: Path = Path(Path.cwd(), self.__storage_path, uid)  #  path to user storage
+        upath: Path = Path(self.__json_config_path, f'{uid}.json')  #  path to user json config
+        udata = {uid: {'permissions': {'w': [spath.__str__()], 'r': [spath.__str__()], 'x': [spath.__str__()]},
+                       'current_path': spath.__str__(),
+                       'home_path': spath.__str__()
                        }
                  }
         try:
-            Path.mkdir(_path.parents[0])
+            Path.mkdir(spath)
         except FileExistsError:
             pass
 
-        with open(_path, 'w') as f:
+        with open(upath, 'w') as f:
             json.dump(udata, f)
 
-        return UserData(uid, udata[uid]['current_path'], udata[uid]['restrictions'], udata[uid]['home_path'])
+        return UserData(uid, udata[uid]['current_path'], udata[uid]['permissions'], udata[uid]['home_path'])
 
     async def load_user(self, uid: str) -> UserData:
         '''
         Loading user data by uid from "self.__storage_path\\uid\\udata.json"
         return namedtuple UserData
         '''
-        upath = Path(self.__storage_path, uid, 'udata.json')
+        # upath = Path(self.__storage_path, uid, 'udata.json')
+        upath: Path = Path(self.__json_config_path, f'{uid}.json')  # path to json config
 
         try:
             with open(upath, 'r') as f:
@@ -58,7 +64,7 @@ class JsonSaveLoader(BaseSaveLoader):
         except FileNotFoundError:
             return await self.create_user(uid)
 
-        udata = UserData(uid, json_udata[uid]['current_path'], json_udata[uid]['restrictions'],
+        udata = UserData(uid, json_udata[uid]['current_path'], json_udata[uid]['permissions'],
                          json_udata[uid]['home_path'])
         return udata
 
@@ -67,8 +73,8 @@ class JsonSaveLoader(BaseSaveLoader):
         Save user`s data in json format in "self.__storage_path\\uid as udata.json
 
         '''
-        upath = Path(self.__storage_path, udata.uid, 'udata.json')
-        _udata = {udata.uid: {'restrictions': udata.restrictions,
+        upath: Path = Path(self.__json_config_path, f'{udata.uid}.json')  # path to json config
+        _udata = {udata.uid: {'permissions': udata.permissions,
                               'current_path': udata.current_path,
                               'home_path': udata.home_path
                               }
@@ -85,13 +91,14 @@ class JsonSaveLoader(BaseSaveLoader):
         '''
         Check if connected user is new user or already connected before
         '''
-        upath = Path(self.__storage_path, uid)
-        return True if not Path.exists(upath) else False
+        spath: Path = Path( self.__storage_path, uid)  #  path to user storage
+        upath: Path = Path(self.__json_config_path, f'{uid}.json')  #  path to user json config
+        return True if not Path.exists(upath) and Path.exists(spath) else False
 
     async def get_users(self) -> str:
         '''
         Returns: list of stored users
         '''
-        path, folders, files = walk_around_folder(self.__storage_path.__str__(), as_str=False)
-        users_list = 'Stored users:\n' + reduce(lambda x, y: f'{x}\n{y}', folders)
+        path, folders, files = walk_around_folder(self.__json_config_path.__str__(), as_str=False)
+        users_list = 'Stored users:\n' + reduce(lambda x, y: f'{x}\n{y}', files)
         return users_list

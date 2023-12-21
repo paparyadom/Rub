@@ -231,14 +231,15 @@ class SimpleProto(BaseProtocol):
         addr = writer.get_extra_info("peername")
         try:
             gen, file_size = data
-            chunk = next(gen)
-            while chunk:
+            await writer.drain()
+            async for chunk in gen:
                 writer.write(chunk)
                 await writer.drain()
                 print(chunk)
-                chunk = next(gen)
+            writer.write(f'\n[eof]'.encode())
+            await writer.drain()
         except StopIteration:
-            print(f'[i] EOF')
+            print(f'[i] eof')
         except ConnectionError:
             print(f'[x] client suddenly closed, can not send')
         print(f'...>> {data} to: {addr}')
@@ -256,6 +257,7 @@ class SimpleProto(BaseProtocol):
         awaiting and receiving reply from server
         '''
         data = b''
+        csock.settimeout(.05)
         rdata = csock.recv(4096)
         while rdata:
             data += rdata
@@ -263,4 +265,16 @@ class SimpleProto(BaseProtocol):
                 rdata = csock.recv(4096)
             except:
                 break
+        csock.settimeout(.05)
         return data
+
+    def file_send_request(self, csock: socket.socket, request: str):
+        csock.sendall(request.encode())
+        ack = csock.recv(1024)
+        with open(r"D:\text.txt", 'rb') as f:
+            csock.sendall(f.read())
+        # csock.sendall(b'\xff\xfed\x00n\x00s\x00p\x00y\x00t\x00h\x00o\x00n\x00=\x00=\x002\x00.\x004\x00.\x002\x00\r\x00\n\x00m\x00o\x00t\x00o\x00r\x00=\x00=\x003\x00.\x003\x00.\x002\x00\r\x00\n\x00p\x00y\x00m\x00o\x00n\x00g\x00o\x00=\x00=\x004\x00.\x006\x00.\x001\x00\r\x00\n\x00P\x00y\x00S\x00o\x00c\x00k\x00s\x00=\x00=\x001\x00.\x007\x00.\x001\x00\r\x00\n\x00t\x00o\x00m\x00l\x00=\x00=\x000\x00.\x001\x000\x00.\x002\x00\r\x00\n\x00')
+
+
+
+

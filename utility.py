@@ -16,7 +16,7 @@ def walk_around_folder(abs_path: str, as_str: bool = True) -> str | Tuple:
 
 async def gen_chunk_read(file_path: str, chunk_size: int = 4096) -> Generator:
     '''
-    path_to_file: asbsolute path to file
+    path_to_file: asbsolute path to ile
     chunk_size: size of chunk
     '''
     with open(file_path, 'rb') as f:
@@ -38,12 +38,12 @@ def define_path(path_or_folder: str, user_path: str) -> str:
     return path
 
 
-def is_allowed(path: Path, restricted_path: List[str]) -> bool:
+def is_allowed(path: Path, avaliable_path: List[str]) -> bool:
     '''
-    check user restrictions
+    check user permissions
     '''
     target_path = path
-    for path in restricted_path:
+    for path in avaliable_path:
         if target_path.is_relative_to(Path(path)):
-            return False
-    return True
+            return True
+    return False

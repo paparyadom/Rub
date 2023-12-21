@@ -20,29 +20,29 @@ class MongoSaveLoader(BaseSaveLoader):
                        self.__cfg['storage'])
 
     async def create_user(self, uid: str) -> UserData:
-        _path: Path = Path(Path.cwd(), self.__storage_path, uid)
+        spath: Path = Path(Path.cwd(), self.__storage_path, uid)
         udata = {"_id": uid,
-                 "restrictions": {'w': [], 'r': [], 'x': []},
-                 "current_path": _path.__str__(),
-                 "home_path": _path.__str__()}
+                 "permissions": {'w': [spath.__str__()], 'r': [spath.__str__()], 'x': [spath.__str__()]},
+                 "current_path": spath.__str__(),
+                 "home_path": spath.__str__()}
 
         try:
-            Path.mkdir(_path)
+            Path.mkdir(spath)
         except FileExistsError:
             pass
         await self.__collection.insert_one(udata)
 
-        return UserData(uid, udata['current_path'], udata['restrictions'], udata['home_path'])
+        return UserData(uid, udata['current_path'], udata['permissions'], udata['home_path'])
 
     async def load_user(self, uid: str) -> UserData:
         db_data = await self.__collection.find_one({'_id': uid})
 
-        udata = UserData(uid, db_data['current_path'], db_data['restrictions'], db_data['home_path'])
+        udata = UserData(uid, db_data['current_path'], db_data['permissions'], db_data['home_path'])
         return udata
 
     async def save_user_data(self, udata: UserData):
         db_data = {'_id': udata.uid,
-                   'restrictions': udata.restrictions,
+                   'permissions': udata.restrictions,
                    'current_path': udata.current_path,
                    'home_path': udata.home_path}
 
@@ -68,7 +68,7 @@ class MongoSaveLoader(BaseSaveLoader):
     def configure(self, connection: Dict[str, Any], database: str, collection: str, storage_path: str):
         self.__client = AsyncIOMotorClient(self.__mongo_uri(**connection), uuidRepresentation='standard')
         self.__collection = self.__client[database][collection]
-        self.__storage_path = Path(storage_path)
+        self.__storage_path = Path(Path.cwd(), storage_path)
 
     def __mongo_uri(self, host: str, port: int, user: str, password: str, auth = False) -> str:
 

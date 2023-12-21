@@ -71,6 +71,7 @@ class UsersSessionHandler:
         if udata.uid in self.__super_users:
             user = SuperUser(DataHandler=self.__UserDataHandler,
                              SessionHandler=self,
+                             permissions=udata.permissions,
                              uid=udata.uid,
                              current_path=udata.current_path,
                              home_path=udata.home_path,
@@ -78,7 +79,7 @@ class UsersSessionHandler:
                              addr=addr)
         else:
             user = User(uid=udata.uid,
-                        restrictions=udata.restrictions,
+                        permissions=udata.permissions,
                         current_path=udata.current_path,
                         home_path=udata.home_path,
                         sock=URW(reader=reader, writer=writer),
@@ -93,7 +94,7 @@ class UsersSessionHandler:
         - delete user from session
         '''
         user = self.__active_sessions[addr]
-        udata = UserData(user.uid, user.current_path, user.restrictions, user.home_path)
+        udata = UserData(user.uid, user.current_path, user.permissions, user.home_path)
         await self.__UserDataHandler.save_user_data(udata)
         user.sock.writer.close()
         self.__active_sessions.pop(addr)

@@ -118,6 +118,13 @@ class InputsHandler:
             else:
                 await proto.send_data(user.sock.reader, user.sock.writer, struct.pack('>Q', 0), with_ack=True, ack=False)
                 return cursor_if_ok
+        elif cmd == 'rawsend':
+            file_name = cmd_tail[0]
+            file_size = int(cmd_tail[1])
+            send_func = UC.rawsend if isinstance(user, User) else SUC.rawsend
+            packet = Packet(user=user, cmd_tail=(file_name,), data_length=file_size)
+            return await send_func(packet)
+
 
 
 

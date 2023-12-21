@@ -54,7 +54,7 @@ class UserCommands:
         else:
             path = Path(utility.define_path(packet.cmd_tail[0], packet.user.current_path))
             if Path(path).is_file():
-                if not utility.is_allowed(path, packet.user.restrictions['r']):
+                if not utility.is_allowed(path, packet.user.permissions['r']):
                     return ERR.PERMISSION_DENIED
                 file_size = Path(path).stat()
                 return utility.gen_chunk_read(path.__str__()), file_size.st_size
@@ -72,7 +72,7 @@ class UserCommands:
         '''
         if packet.cmd_tail:
             path = Path(utility.define_path(packet.cmd_tail[0], packet.user.current_path))
-            if not utility.is_allowed(path, packet.user.restrictions['x']):
+            if not utility.is_allowed(path, packet.user.permissions['x']):
                 return ERR.PERMISSION_DENIED
             try:
                 res = utility.walk_around_folder(path.__str__())
@@ -80,7 +80,7 @@ class UserCommands:
                 return ERR.NOT_FOUND(packet.cmd_tail[0])
         else:
             path = Path(packet.user.current_path)
-            if not utility.is_allowed(path, packet.user.restrictions['x']):
+            if not utility.is_allowed(path, packet.user.permissions['x']):
                 return ERR.PERMISSION_DENIED
             res = utility.walk_around_folder(path.__str__())
         return res.encode()
@@ -94,7 +94,7 @@ class UserCommands:
 
         if packet.cmd_tail:
             path = Path(utility.define_path(packet.cmd_tail[0], packet.user.current_path))
-            if not utility.is_allowed(path, packet.user.restrictions['x']):
+            if not utility.is_allowed(path, packet.user.permissions['x']):
                 return ERR.PERMISSION_DENIED
             if not Path(path).exists():
                 try:
@@ -118,7 +118,7 @@ class UserCommands:
 
         if packet.cmd_tail:
             path = Path(utility.define_path(packet.cmd_tail[0], packet.user.current_path))
-            if not utility.is_allowed(path, packet.user.restrictions['x']):
+            if not utility.is_allowed(path, packet.user.permissions['x']):
                 return ERR.PERMISSION_DENIED
             try:
                 Path(path).rmdir()
@@ -139,7 +139,7 @@ class UserCommands:
 
         if packet.cmd_tail:
             path = Path(utility.define_path(packet.cmd_tail[0], packet.user.current_path))
-            if not utility.is_allowed(path, packet.user.restrictions['x']):
+            if not utility.is_allowed(path, packet.user.permissions['x']):
                 return ERR.PERMISSION_DENIED
             try:
                 Path(path).unlink()
@@ -171,7 +171,7 @@ class UserCommands:
 
         if not path_to_save.parent.exists():
             return False, ERR.NOT_FOUND(path_to_save.__str__())
-        elif not utility.is_allowed(path_to_save, packet.user.restrictions['w']):
+        elif not utility.is_allowed(path_to_save, packet.user.permissions['w']):
             return False, ERR.PERMISSION_DENIED
         else:   # try to find parts of file
             if check_fragmentation:
@@ -235,7 +235,7 @@ class UserCommands:
                 path = Path(utility.define_path(packet.cmd_tail[0], packet.user.current_path))
 
         if Path(path).exists() and Path(path).is_dir():
-            if not utility.is_allowed(path, packet.user.restrictions['x']):
+            if not utility.is_allowed(path, packet.user.permissions['x']):
                 return ERR.PERMISSION_DENIED
 
             packet.user.current_path = path.__str__()
@@ -254,7 +254,7 @@ class UserCommands:
             res = ERR.EMPTY_PATH
         else:
             path = Path(utility.define_path(packet.cmd_tail[0], packet.user.current_path))
-            if not utility.is_allowed(path, packet.user.restrictions['x']):
+            if not utility.is_allowed(path, packet.user.permissions['x']):
                 return ERR.PERMISSION_DENIED
             try:
                 status = Path(path).stat()
@@ -276,3 +276,21 @@ class UserCommands:
         whoami - information about user
         '''
         return packet.user.get_full_info().encode()
+
+    @staticmethod
+    async def rawsend(packet: Packet) -> bytes:
+        '''
+        raw file
+        '''
+        # file_name, file_size, *data = packet.cmd_tail
+        file_name = packet.cmd_tail[0]
+        packet.user.sock.writer.write(f'ok'.encode())
+        await packet.user.sock.writer.drain()
+
+        data = await packet.user.sock.reader.read(packet.data_length)
+        path = Path(packet.user.current_path,file_name).__str__()
+        with open(path, 'wb') as f:
+            f.write(data)
+        return f'{file_name} was successfully saved to {path}'.encode()
+
+

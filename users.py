@@ -1,18 +1,15 @@
-import socket
 from typing import Dict, Tuple
 
-import UserDataHandle
 from UserDataHandle.BaseSaveLoader import BaseSaveLoader
 
 
-
 class User:
-    def __init__(self, uid: str, addr: Tuple, sock: Tuple, current_path: str, restrictions: Dict,
+    def __init__(self, uid: str, addr: Tuple, sock: Tuple, current_path: str, permissions: Dict,
                  home_path: str = None):
         self.__id = uid
         self.__current_path = current_path
         self.__home_path = home_path
-        self.__restrictions = restrictions
+        self.__permissions = permissions
         self.__sock = sock
         self.__addr = addr
 
@@ -25,12 +22,12 @@ class User:
         self.__current_path = path
 
     @property
-    def restrictions(self):
-        return self.__restrictions
+    def permissions(self):
+        return self.__permissions
 
-    @restrictions.setter
-    def restrictions(self, restrictions):
-        self.__restrictions = restrictions
+    @permissions.setter
+    def permissions(self, permissions):
+        self.__permissions = permissions
 
     @property
     def sock(self):
@@ -54,7 +51,7 @@ class User:
 
     def get_full_info(self):
         info = (f'id = {self.__id}\n'
-                f'Restrictions = {self.__restrictions}\n'
+                f'Permissions = {self.__permissions}\n'
                 f'current path = {self.__current_path}\n'
                 f'home path = {self.__home_path}\n'
                 f'address = {self.__addr}\n')
@@ -63,10 +60,10 @@ class User:
 
 class SuperUser(User):
     def __init__(self, DataHandler: BaseSaveLoader, SessionHandler, **kwargs):
-        super().__init__(restrictions={'w': ['...'], 'r': ['...'], 'x': ['...']}, **kwargs)
+        super().__init__(**kwargs)
         self._DataHandler = DataHandler
         self._SessionHandler = SessionHandler
-        self._restrictions = super().restrictions
+        self._permissions = super().permissions
 
     @property
     def DataHandler(self):
@@ -75,5 +72,3 @@ class SuperUser(User):
     @property
     def SessionHandler(self):
         return self._SessionHandler
-
-

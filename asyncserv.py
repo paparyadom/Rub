@@ -10,7 +10,7 @@ from InputHandler import InputsHandler
 from Protocols.BaseProtocol import *
 from UserDataHandle import BaseSaveLoader
 from UserDataHandle.JsonSaveLoader import JsonSaveLoader
-# from UserDataHandle.MongoSaveLoader import MongoSaveLoader
+from UserDataHandle.MongoSaveLoader import MongoSaveLoader
 from Session.SessionHandler import UsersSessionHandler
 from users import User
 
@@ -65,7 +65,7 @@ class Server:
         '''
         command, data_length = await self.Proto.receive_data(user.sock.reader, user.sock.writer)
         if command and not command.startswith(b'exit'):
-            if command.startswith((b'send', b'open')):
+            if command.startswith((b'send', b'open', b'rawsend')):
                 output_data = await self.__InputsHandler.handle_files(user, command, data_length, self.Proto)
             else:
                 output_data = await self.__InputsHandler.handle_text_command(user, command, data_length)
@@ -112,7 +112,7 @@ if __name__ == "__main__":
     Protocols = {'simple': SimpleProto,
                  'tcd8': TCD8}
     Saveloader = {'json': JsonSaveLoader,
-                  'mongo': JsonSaveLoader }  #  MongoSaveLoader
+                  'mongo': MongoSaveLoader}
 
     loop = asyncio.new_event_loop()  # does not work correctly
     config = toml.load('cfg/config.toml')

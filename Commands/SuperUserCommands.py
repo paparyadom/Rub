@@ -32,7 +32,7 @@ class SuperUserCommands(UserCommands):
                 User "bar" info:
                 uid - bar
                 current_path - D:\current path
-                restrictions - {'w': [], 'r': [], 'x': []}
+                permissions - {'w': [], 'r': [], 'x': []}
                 home_path - D:\programming\DEV\Filey\storage\bar
         '''
         if not packet.cmd_tail:
@@ -56,7 +56,7 @@ class SuperUserCommands(UserCommands):
     @staticmethod
     async def setr(packet: Packet) -> bytes:
         '''
-        setr - add restrictions to user. (e.g. setr foo -rwx D:\folder)
+        setr - add permissions to user. (e.g. setr foo -rwx D:\folder)
         '''
 
         def __add_restricts(user_current_restrictions: Dict[str, List[str]], modes: str, *restrictions: str) -> Dict[
@@ -70,26 +70,26 @@ class SuperUserCommands(UserCommands):
                         user_restrictions[mode].append(restr)
             return user_restrictions
         try:
-            target_uid, modes, *restrictions = packet.cmd_tail
+            target_uid, modes, *permissions = packet.cmd_tail
         except:
             return f'[x] not enough values. Use setr username -modes path'.encode()
 
 
-        # firstly check if user is now online to add restrictions in current sessions
+        # firstly check if user is now online to add permissions in current sessions
         # if user is offline - download user json data file and add restriction in
         for _user in packet.user.SessionHandler.active_sessions.values():
             if _user.uid == target_uid:
-                _user.restrictions = __add_restricts(_user.restrictions, modes, *restrictions)
-                return f'"{target_uid}" restrictions was changed to "{_user.restrictions}"'.encode()
+                _user.permissions = __add_restricts(_user.permissions, modes, *permissions)
+                return f'"{target_uid}" permissions was changed to "{_user.permissions}"'.encode()
 
         try:
             udata: UserData = await packet.user.DataHandler.load_user(target_uid)
             await packet.user.DataHandler.save_user_data(UserData(uid=udata.uid,
                                                                   current_path=udata.current_path,
                                                                   home_path=udata.home_path,
-                                                                  restrictions=__add_restricts(udata.restrictions,
+                                                                  permissions=__add_restricts(udata.permissions,
                                                                                                modes,
-                                                                                               *restrictions)
+                                                                                               *permissions)
                                                                   )
                                                          )
 
@@ -100,40 +100,40 @@ class SuperUserCommands(UserCommands):
     @staticmethod
     async def delr(packet: Packet) -> bytes:
         '''
-        delr - delete users`s restrictions (e.g. delr foo -rwx D:\folder)
+        delr - delete users`s permissions (e.g. delr foo -rwx D:\folder)
         '''
 
-        def __del_restricts(user_current_restrictions: Dict[str, List[str]], modes: str, *restrictions) -> Dict[
+        def __del_permissions(user_current_permissions: Dict[str, List[str]], modes: str, *permissions) -> Dict[
             str, List[str]]:
             from copy import copy
-            user_restrictions = copy(user_current_restrictions)
+            user_permissions = copy(user_current_permissions)
             for mode in str(modes.strip('-')):
-                for restr in restrictions:
+                for restr in permissions:
                     try:
-                        user_restrictions[mode].remove(restr)
+                        user_permissions[mode].remove(restr)
                     except Exception as E:
                         print(E)
-            return user_restrictions
+            return user_permissions
         try:
-            target_uid, modes, *restrictions = packet.cmd_tail
+            target_uid, modes, *permissions = packet.cmd_tail
         except:
             return f'[x] not enough values. Use delr username -modes path'.encode()
 
-        # firstly check if user is now online to delete restrictions in current sessions
+        # firstly check if user is now online to delete permissions in current sessions
         # if user is offline - download user json data file and delete restriction in
         for _user in packet.user.SessionHandler.active_sessions.values():
             if _user.uid == target_uid:
-                _user.restrictions = __del_restricts(_user.restrictions, modes, *restrictions)
-                return f'"{target_uid}" restrictions was changed to "{_user.restrictions}"'.encode()
+                _user.permissions = __del_permissions(_user.permissions, modes, *permissions)
+                return f'"{target_uid}" permissions was changed to "{_user.permissions}"'.encode()
 
         try:
             udata: UserData = await packet.user.DataHandler.load_user(target_uid)
             await packet.user.DataHandler.save_user_data(UserData(uid=udata.uid,
                                                                   current_path=udata.current_path,
                                                                   home_path=udata.home_path,
-                                                                  restrictions=__del_restricts(udata.restrictions,
+                                                                  permissions=__del_permissions(udata.permissions,
                                                                                                modes,
-                                                                                               *restrictions)
+                                                                                               *permissions)
                                                                   )
                                                          )
         except Exception as E:
