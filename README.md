@@ -9,15 +9,15 @@
 Настройки сервера хранятся в файле config.toml в каталоге ./cfg</br>
 Структура файла:</br>
 **[conn]**</br>
-host = "" _адрес сервера_ </br>
-port = 3233 _портсервера_ </br>
-proto = "simple" # avaliable simple - SimpleProto , tcd8 - TCD8 _используемый протокол_ </br>
+host = "" # _адрес сервера_ </br>
+port = 3233 # _портсервера_ </br>
+proto = "simple" # avaliable simple - SimpleProto , tcd8 - TCD8 # _используемый протокол_ </br>
 
 **[saveloader]**</br>
-type = 'json' # avaliable mongo, json _способ хранения данных пользователей_ </br>
-connection = {host  = '127.0.0.1', port = 27017, user = '', password = '', auth = false} _строка подключения к MongoDB_ </br>
-db = {database = 'fsdb', collection = 'fsusers'} _настройка имен базы данных и коллекции в MongoDB _</br>
-storage = 'storage' _имя каталога с файловыми пространствами пользователей_ </br>
+type = 'json' # avaliable mongo, json # _способ хранения данных пользователей_ </br>
+connection = {host  = '127.0.0.1', port = 27017, user = '', password = '', auth = false} # _строка подключения к MongoDB_ </br>
+db = {database = 'fsdb', collection = 'fsusers'} # _настройка имен базы данных и коллекции в MongoDB _</br>
+storage = 'storage' # _имя каталога с файловыми пространствами пользователей_ </br>
 
 
 
