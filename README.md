@@ -5,19 +5,19 @@
 * Если команда не известна серверу, он высылает в ответ ошибку с сообщением: `no such command`.
   
 Для организации связи реализовано два протокола SimpleProto и TCD8. При подключении пользователя сервер отправляет [запрос "id?"](https://github.com/paparyadom/Rub/blob/master/Protocols/BaseProtocol.py#L54) для получения id пользователя
-#### Настроки сервера
+#### Настройки сервера
 Настройки сервера хранятся в файле config.toml в каталоге ./cfg</br>
 Структура файла:</br>
-[conn]</br>
-host = ""</br>
-port = 3233</br>
-proto = "simple" # avaliable simple - SimpleProto , tcd8 - TCD8</br>
+**[conn]**</br>
+host = "" _адрес сервера_ </br>
+port = 3233 _портсервера_ </br>
+proto = "simple" # avaliable simple - SimpleProto , tcd8 - TCD8 _используемый протокол_ </br>
 
-[saveloader]</br>
-type = 'json' # avaliable mongo, json</br>
-connection = {host  = '127.0.0.1', port = 27017, user = '', password = '', auth = false}</br>
-db = {database = 'fsdb', collection = 'fsusers'}</br>
-storage = 'storage'</br>
+**[saveloader]**</br>
+type = 'json' # avaliable mongo, json _способ хранения данных пользователей_ </br>
+connection = {host  = '127.0.0.1', port = 27017, user = '', password = '', auth = false} _строка подключения к MongoDB_ </br>
+db = {database = 'fsdb', collection = 'fsusers'} _настройка имен базы данных и коллекции в MongoDB _</br>
+storage = 'storage' _имя каталога с файловыми пространствами пользователей_ </br>
 
 
 
