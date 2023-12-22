@@ -24,9 +24,9 @@
 <br/>
 Настройки сервера хранятся в файле config.toml в ./cfg<br/>
 Для настройки необходимо: <br/>
-в файле config.toml задать<br/>:
-- type = mongo
-- ввести данные для подключения connection = {host = '127.0.0.1', port = 27017, user = '', password = '', auth = false}. Для подключения к сервери с ипользованием аутентификации необходимо задать поле auth = true<br/>
+в файле config.toml задать:<br/>
+- type = mongo <br/>
+- ввести данные для подключения connection = {host = '127.0.0.1', port = 27017, user = '', password = '', auth = false}. Для подключения к серверу с ипользованием аутентификации необходимо задать поле auth = true<br/>
 - задать имена для бд и коллекции. По умолчанию - db = {database = 'fsdb', collection = 'fsusers'}
 
 
