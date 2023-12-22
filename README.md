@@ -5,6 +5,22 @@
 * Если команда не известна серверу, он высылает в ответ ошибку с сообщением: `no such command`.
   
 Для организации связи реализовано два протокола SimpleProto и TCD8. При подключении пользователя сервер отправляет [запрос "id?"](https://github.com/paparyadom/Rub/blob/master/Protocols/BaseProtocol.py#L54) для получения id пользователя
+#### Настроки сервера
+Настройки сервера хранятся в файле config.toml в каталоге ./cfg</br>
+Структура файла:
+[conn]</br>
+host = ""</br>
+port = 3233</br>
+proto = "simple" # avaliable simple - SimpleProto , tcd8 - TCD8</br>
+
+[saveloader]</br>
+type = 'json' # avaliable mongo, json</br>
+connection = {host  = '127.0.0.1', port = 27017, user = '', password = '', auth = false}</br>
+db = {database = 'fsdb', collection = 'fsusers'}</br>
+storage = 'storage'</br>
+
+
+
 
 ### SimpleProto
 Данный протокол отправялет данные "как есть" - без дополнительных полей. Отправка заканчивается сообщением `\n[end]` 
