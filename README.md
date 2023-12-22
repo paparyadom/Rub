@@ -7,7 +7,7 @@
 Для организации связи реализовано два протокола SimpleProto и TCD8. При подключении пользователя сервер отправляет [запрос "id?"](https://github.com/paparyadom/Rub/blob/master/Protocols/BaseProtocol.py#L54) для получения id пользователя
 
 ### SimpleProto
-Данный протокол отправялет данные "как есть" - без дополнительных полей. Отправка заканчивается сообщением `[end]` 
+Данный протокол отправялет данные "как есть" - без дополнительных полей. Отправка заканчивается сообщением `\n[end]` 
 Отправка файлов на сервер реалиована функцией [`BaseProtocol.SimpleProto.rawsend`](https://github.com/paparyadom/Rub/blob/master/Protocols/BaseProtocol.py#L127)
 Процесс отправки файла:
 * отправка запроса `rawsend имя_файла количество_байт_для_отправки`
@@ -44,6 +44,7 @@
 | [defi](https://github.com/paparyadom/Rub/blob/master/Commands/UserCommands.py#L121)    		|абсолютный путь или относительный путь файла				|[>] successfully deleted file 'путь до файла'|*Если файл не найден| Удаление файла |  
 | [open](https://github.com/paparyadom/Rub/blob/master/Commands/UserCommands.py#L31)  		|абсолютный путь или относительный путь файла				|данные файла|*Если указан пустой путь до файла<br/>*Если указаного пути не существует | Открыть файл |    
 | [send](https://github.com/paparyadom/Rub/blob/master/Commands/UserCommands.py#L142)<br/>(только TCD8)|Путь до посылаемого файла или имя файла '>' путь сохранения файла		|[>] file was successfully saved to "путь до файла" | *Если путь сохранения не существует<br/>*Если стоит запрет для пользователя на запись | Отправка файла|
+| [rawsend](https://github.com/paparyadom/Rub/blob/master/Commands/UserCommands.py#L142)<br/>(только SimpleProto)|имя_файла количество_байт 		|[>] file was successfully saved to "путь до файла" | | Отправка файла|
 
 
 ### Расширенные команды
