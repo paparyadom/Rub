@@ -54,7 +54,7 @@ class SuperUserCommands(UserCommands):
         return f'{user_info}'.encode()
 
     @staticmethod
-    async def setr(packet: Packet) -> bytes:
+    async def setp(packet: Packet) -> bytes:
         '''
         setr - add permissions to user. (e.g. setr foo -rwx D:\folder)
         '''
@@ -98,7 +98,7 @@ class SuperUserCommands(UserCommands):
         return str(udata).encode()
 
     @staticmethod
-    async def delr(packet: Packet) -> bytes:
+    async def delp(packet: Packet) -> bytes:
         '''
         delr - delete users`s permissions (e.g. delr foo -rwx D:\folder)
         '''

@@ -204,7 +204,7 @@ class SimpleProto(BaseProtocol):
         except ConnectionError:
             print(f'[x] client suddenly closed connection')
             return failed_recv
-        print(f'<<... {command} from: {addr}')
+        # print(f'<<... {command} from: {addr}')
         if not command:
             print(f'[x] disconnected by, {addr}')
         return command, 0
@@ -236,7 +236,7 @@ class SimpleProto(BaseProtocol):
                 writer.write(chunk)
                 await writer.drain()
                 print(chunk)
-            writer.write(f'\n[eof]'.encode())
+            writer.write(f'\n[end]'.encode())
             await writer.drain()
         except StopIteration:
             print(f'[i] eof')
@@ -269,12 +269,22 @@ class SimpleProto(BaseProtocol):
         return data
 
     def file_send_request(self, csock: socket.socket, request: str):
-        csock.sendall(request.encode())
-        ack = csock.recv(1024)
-        with open(r"D:\text.txt", 'rb') as f:
-            csock.sendall(f.read())
-        # csock.sendall(b'\xff\xfed\x00n\x00s\x00p\x00y\x00t\x00h\x00o\x00n\x00=\x00=\x002\x00.\x004\x00.\x002\x00\r\x00\n\x00m\x00o\x00t\x00o\x00r\x00=\x00=\x003\x00.\x003\x00.\x002\x00\r\x00\n\x00p\x00y\x00m\x00o\x00n\x00g\x00o\x00=\x00=\x004\x00.\x006\x00.\x001\x00\r\x00\n\x00P\x00y\x00S\x00o\x00c\x00k\x00s\x00=\x00=\x001\x00.\x007\x00.\x001\x00\r\x00\n\x00t\x00o\x00m\x00l\x00=\x00=\x000\x00.\x001\x000\x00.\x002\x00\r\x00\n\x00')
+        '''
+        File send process
+        Example: rawsend text.txt 100
+        where rawsend - request
+            text.txt - file name
+            100 - size of file
 
+        It is possible to save just part of file. For example if you have file text.txt with size of 100 bytes and
+        want to send just 50 of it - write request "rawsend text.txt 100' and send just 50 bytes. In this case send data
+        will be saved in file 'text.txt.part'. If you want finish download you should use request 'rawsend text.txt 50' and send
+        other 50 bytes.
 
-
-
+        Example:
+        file_send_request(self, csock: socket.socket, request: str = 'rawsend otp.exe 152689848')
+                csock.sendall(request.encode())
+                with open(r"D:\otp.exe", 'rb') as f:
+                     csock.sendall(f.read())
+        '''
+        raise NotImplemented

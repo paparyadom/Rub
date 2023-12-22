@@ -43,10 +43,9 @@ class Client:
                 if request.startswith('exit'):
                     self.__proto.send_request(csock=self.sock, request=request)
                     break
-                # elif request.startswith('send'):
-                elif request.startswith('rawsend'):
+                elif request.startswith(('rawsend', 'send')):
                     try:
-                        self.sock.settimeout(None)
+                        # self.sock.settimeout(1)
                         self.__proto.file_send_request(csock=self.sock, request=request)
                     except Exception as E:
                         print(E)

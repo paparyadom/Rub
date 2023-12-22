@@ -1,6 +1,6 @@
 [conn]
 host = ""
-port = 3232
+port = 3233
 proto = "simple" # avaliable simple - SimpleProto , tcd8 - TCD8
 
 [saveloader]
