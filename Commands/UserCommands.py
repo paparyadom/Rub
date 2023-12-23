@@ -102,7 +102,7 @@ class UserCommands:
                 try:
                     Path(path).mkdir()
                 except Exception as E:
-                    return ERR.OTHER(E)
+                    return ERR.OTHER('...')
                 res = f'[>] successfully created folder "{utility.trim_path(path=path.__str__(),user_home_folder=packet.user.home_path)}"'.encode()
             else:
                 res = ERR.ALREADY_EXISTS
@@ -125,7 +125,7 @@ class UserCommands:
             try:
                 Path(path).rmdir()
             except Exception as E:
-                return ERR.OTHER(E)
+                return ERR.NOT_FOUND(packet.cmd_tail[0])
             res = f'[>] successfully deleted folder "{utility.trim_path(path=path.__str__(),user_home_folder=packet.user.home_path)}"'
         else:
             res = ERR.EMPTY_PATH
@@ -146,7 +146,7 @@ class UserCommands:
             try:
                 Path(path).unlink()
             except Exception as E:
-                return ERR.OTHER(E)
+                return ERR.NOT_FOUND(packet.cmd_tail[0])
             res = f'[>] successfully deleted file "{utility.trim_path(path=path.__str__(),user_home_folder=packet.user.home_path)}"'
         else:
             res = ERR.EMPTY_PATH
@@ -268,10 +268,10 @@ class UserCommands:
                        f'Created: {time.ctime(status.st_ctime)}\n\t'
                        f'Last modified: {time.ctime(status.st_mtime)}\n\t'
                        f'Last accessed: {time.ctime(status.st_atime)}'
-                       )
+                       ).encode()
             except Exception as E:
-                res = ERR.OTHER(E)
-        return res.encode()
+                res = ERR.NOT_FOUND(packet.cmd_tail[0])
+        return res
 
     @staticmethod
     async def whoami(packet: Packet) -> bytes:
