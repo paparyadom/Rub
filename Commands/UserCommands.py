@@ -37,7 +37,7 @@ class UserCommands:
         '''
         where - show your current path
         '''
-        return f'[>] you are now in {packet.user.current_path}'.encode()
+        return f'[>] you are now in {utility.trim_path(path=packet.user.current_path,user_home_folder=packet.user.home_path)}'.encode()
 
     @staticmethod
     async def open(packet: Packet) -> Tuple[Generator, int] | bytes:
@@ -72,17 +72,19 @@ class UserCommands:
         '''
         if packet.cmd_tail:
             path = Path(utility.define_path(packet.cmd_tail[0], packet.user.current_path))
+            trimmed_path = utility.trim_path(path=path.__str__(), user_home_folder=packet.user.home_path)
             if not utility.is_allowed(path, packet.user.permissions['x']):
                 return ERR.PERMISSION_DENIED
             try:
-                res = utility.walk_around_folder(path.__str__())
+                res = utility.walk_around_folder(path.__str__(), trimmed_path=trimmed_path)
             except:
                 return ERR.NOT_FOUND(packet.cmd_tail[0])
         else:
             path = Path(packet.user.current_path)
+            trimmed_path = utility.trim_path(path=path.__str__(), user_home_folder=packet.user.home_path)
             if not utility.is_allowed(path, packet.user.permissions['x']):
                 return ERR.PERMISSION_DENIED
-            res = utility.walk_around_folder(path.__str__())
+            res = utility.walk_around_folder(path.__str__(), trimmed_path=trimmed_path)
         return res.encode()
 
     @staticmethod
@@ -101,12 +103,12 @@ class UserCommands:
                     Path(path).mkdir()
                 except Exception as E:
                     return ERR.OTHER(E)
-                res = f'[>] successfully created folder "{path}"'
+                res = f'[>] successfully created folder "{utility.trim_path(path=path.__str__(),user_home_folder=packet.user.home_path)}"'.encode()
             else:
                 res = ERR.ALREADY_EXISTS
         else:
             res = ERR.EMPTY_PATH
-        return res.encode()
+        return res
 
     @staticmethod
     async def defo(packet: Packet) -> bytes:
@@ -124,7 +126,7 @@ class UserCommands:
                 Path(path).rmdir()
             except Exception as E:
                 return ERR.OTHER(E)
-            res = f'[>] successfully deleted folder "{path}"'
+            res = f'[>] successfully deleted folder "{utility.trim_path(path=path.__str__(),user_home_folder=packet.user.home_path)}"'
         else:
             res = ERR.EMPTY_PATH
         return res.encode()
@@ -145,7 +147,7 @@ class UserCommands:
                 Path(path).unlink()
             except Exception as E:
                 return ERR.OTHER(E)
-            res = f'[>] successfully deleted file "{path}"'
+            res = f'[>] successfully deleted file "{utility.trim_path(path=path.__str__(),user_home_folder=packet.user.home_path)}"'
         else:
             res = ERR.EMPTY_PATH
         return res.encode()
@@ -198,8 +200,8 @@ class UserCommands:
                     while already_read < packet.data_length:
                         to_read = packet.data_length - already_read
                         try:
-                            # data = await packet.user.sock.reader.read(chunk if to_read > chunk else to_read)
-                            data = await asyncio.wait_for(packet.user.sock.reader.read(chunk if to_read > chunk else to_read), timeout=1)
+                            data = await asyncio.wait_for(
+                                packet.user.sock.reader.read(chunk if to_read > chunk else to_read), timeout=5)
                             f.write(data)
                             already_read += len(data)
                             if data == b'' and to_read > 0:
@@ -216,7 +218,7 @@ class UserCommands:
                     saved_to = path_to_save.__str__()[:-5]
             except Exception as E:
                 return ERR.OTHER(E)
-            return f'[>] file was successfully saved to "{saved_to}" '.encode()
+            return f'[>] file was successfully saved to "{utility.trim_path(path=saved_to.__str__(),user_home_folder=packet.user.home_path)}" '.encode()
 
         return saver, cursor_position
 
@@ -235,13 +237,12 @@ class UserCommands:
                 path = Path(packet.user.home_path)
             else:
                 path = Path(utility.define_path(packet.cmd_tail[0], packet.user.current_path))
-
         if Path(path).exists() and Path(path).is_dir():
             if not utility.is_allowed(path, packet.user.permissions['x']):
                 return ERR.PERMISSION_DENIED
 
             packet.user.current_path = path.__str__()
-            res = f'[>] path changed to {path.__str__()}'.encode()
+            res = f'[>] path changed to {utility.trim_path(path=path.__str__(),user_home_folder=packet.user.home_path)}'.encode()
         else:
             res = ERR.NOT_FOUND(packet.cmd_tail[0])
         return res
@@ -260,10 +261,10 @@ class UserCommands:
                 return ERR.PERMISSION_DENIED
             try:
                 status = Path(path).stat()
-                res = (f'[>] {path} info:\n\t'
+                res = (f'[>] {utility.trim_path(path=path.__str__(),user_home_folder=packet.user.home_path)} info:\n\t'
                        f'Size: {status.st_size} bytes\n\t'
                        f'Permissions:{stat.filemode(status.st_mode)}\n\t'
-                       f'Owner:{status.st_uid}\n\t'
+                       # f'Owner:{status.st_uid}\n\t'
                        f'Created: {time.ctime(status.st_ctime)}\n\t'
                        f'Last modified: {time.ctime(status.st_mtime)}\n\t'
                        f'Last accessed: {time.ctime(status.st_atime)}'
@@ -300,7 +301,8 @@ class UserCommands:
                     while already_read < packet.data_length:
                         to_read = packet.data_length - already_read
                         try:
-                            data = await asyncio.wait_for(packet.user.sock.reader.read(chunk if to_read > chunk else to_read), timeout=1)
+                            data = await asyncio.wait_for(
+                                packet.user.sock.reader.read(chunk if to_read > chunk else to_read), timeout=5)
                             f.write(data)
                             already_read += len(data)
                             if not data and to_read > 0:
@@ -317,4 +319,4 @@ class UserCommands:
                     saved_to = path_to_save.__str__()[:-5]
             except Exception as E:
                 return ERR.OTHER(E)
-        return f'{file_name} was successfully saved to {saved_to}'.encode()
+        return f'{file_name} was successfully saved to {utility.trim_path(path=saved_to.__str__(),user_home_folder=packet.user.home_path)}'.encode()

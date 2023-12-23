@@ -1,4 +1,5 @@
 from typing import Dict, Tuple
+import utility
 
 from UserDataHandle.BaseSaveLoader import BaseSaveLoader
 
@@ -51,9 +52,8 @@ class User:
 
     def get_full_info(self):
         info = (f'id = {self.__id}\n'
-                f'Permissions = {self.__permissions}\n'
-                f'current path = {self.__current_path}\n'
-                f'home path = {self.__home_path}\n'
+                f'current path = {utility.trim_path(self.__current_path, self.__home_path)}\n'
+                f'home path = {utility.trim_path(self.__home_path, self.__home_path)}\n'
                 f'address = {self.__addr}\n')
         return info
 
