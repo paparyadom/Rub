@@ -8,7 +8,10 @@ def walk_around_folder(abs_path: str, trimmed_path: str, as_str: bool = True, ) 
     abs_path: absolute path to file
     return: list of objects as string
     '''
-    path, folders, files = next(os.walk(abs_path))
+    try:
+        path, folders, files = next(os.walk(abs_path))
+    except:
+        return f'[>] no such folder'
     obj_list = ('folder> .. ' + '\nfolder> .. '.join(folders)) if len(folders) != 0 else '...'
     obj_list += ('\n>       .. ' + '\n>       .. '.join(files)) if len(files) != 0 else '\n...'
     return f'[>] {trimmed_path} \n{obj_list}' if as_str else (path, folders, files)

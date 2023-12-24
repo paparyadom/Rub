@@ -122,6 +122,8 @@ class UserCommands:
             path = Path(utility.define_path(packet.cmd_tail[0], packet.user.current_path))
             if not utility.is_allowed(path, packet.user.permissions['x']):
                 return ERR.PERMISSION_DENIED
+            if Path(packet.user.current_path).is_relative_to(path):
+                return f'[!] can not delete - use jump to change you folder up '.encode()
             try:
                 Path(path).rmdir()
             except Exception as E:
