@@ -120,8 +120,17 @@ class InputsHandler:
                 await proto.send_data(user.sock.reader, user.sock.writer, struct.pack('>Q', 0), with_ack=True, ack=False)
                 return cursor_if_ok
         elif cmd == 'rawsend' and isinstance(proto, SimpleProto):
-            file_name = cmd_tail[0]
-            file_size = int(cmd_tail[1])
+            if len(cmd_tail) == 0:
+                return f'[!] empty file name'.encode()
+            else:
+                file_name = cmd_tail[0]
+            if len(cmd_tail) == 1:
+                return f'[!] empty file size'.encode()
+            else:
+                try:
+                    file_size = int(cmd_tail[1])
+                except ValueError:
+                    return f'[!] file size must be an integer'.encode()
             send_func = UC.rawsend if isinstance(user, User) else SUC.rawsend
             packet = Packet(user=user, cmd_tail=(file_name,), data_length=file_size)
             return await send_func(packet)

@@ -123,13 +123,6 @@ class TCD8(BaseProtocol):
                 writer.write(chunk)
                 await writer.drain()
                 print(chunk)
-            # chunk = next(gen)
-            # while chunk:
-            #     writer.write(chunk)
-            #     await writer.drain()
-            #     print(chunk)
-            #     chunk = next(gen)
-
         except StopIteration:
             print(f'[i] EOF')
         except ConnectionError:
@@ -204,7 +197,7 @@ class SimpleProto(BaseProtocol):
         except ConnectionError:
             print(f'[x] client suddenly closed connection')
             return failed_recv
-        # print(f'<<... {command} from: {addr}')
+        print(f'<<... {command} from: {addr}')
         if not command:
             print(f'[x] disconnected by, {addr}')
         return command, 0
@@ -218,7 +211,7 @@ class SimpleProto(BaseProtocol):
         addr = writer.get_extra_info("peername")
         try:
             writer.write(data)
-            writer.write(f'\n[end]'.encode())
+            writer.write(b'\x04')
             await writer.drain()
         except ConnectionError:
             print(f'[x] client suddenly closed, can not send')
@@ -236,7 +229,7 @@ class SimpleProto(BaseProtocol):
                 writer.write(chunk)
                 await writer.drain()
                 print(chunk)
-            writer.write(f'\n[end]'.encode())
+            writer.write(b'\x04')
             await writer.drain()
         except StopIteration:
             print(f'[i] eof')

@@ -75,7 +75,7 @@ if __name__ == '__main__':
     try:
         host, port, proto, UUID = sys.argv[1:]
     except:
-        host, port, proto, UUID = 'localhost', 3232,'simple', 'bar'
+        host, port, proto, UUID = 'localhost', 3333, 'simple', 'test'
     try:
         client = Client(proto=Protocols[proto]())
         client.connect(host, int(port))

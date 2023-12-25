@@ -290,6 +290,8 @@ class UserCommands:
         mode = 'wb'
         parted = False
         file_name = packet.cmd_tail[0]
+        timeout_err = ''
+
         path_to_save = Path(packet.user.current_path, file_name)
         saved_to = path_to_save.__str__()
         if check_fragmentation:
@@ -310,15 +312,19 @@ class UserCommands:
                             if not data and to_read > 0:
                                 raise Exception
                         except Exception as E:
+                            if isinstance(E, asyncio.TimeoutError):
+                                timeout_err = '(5 sec data timeout expired) '
                             f.close()
                             if path_to_save.suffix != '.part':
                                 path_to_save.rename(path_to_save.__str__() + '.part')
                                 saved_to = path_to_save.__str__() + '.part'
+                            else:
+                                saved_to = path_to_save.__str__()
                             parted = True
                             break
                 if mode == 'ab' and parted is False:
                     path_to_save.rename(path_to_save.__str__()[:-5])
                     saved_to = path_to_save.__str__()[:-5]
             except Exception as E:
-                return ERR.OTHER(E)
-        return f'{file_name} was successfully saved to {utility.trim_path(path=saved_to.__str__(),user_home_folder=packet.user.home_path)}'.encode()
+                return ERR.OTHER(': use correct input')
+        return f'{timeout_err}{file_name} was successfully saved to {utility.trim_path(path=saved_to.__str__(),user_home_folder=packet.user.home_path)}'.encode()

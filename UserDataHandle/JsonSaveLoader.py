@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Dict, Any
 
 from UserDataHandle.BaseSaveLoader import BaseSaveLoader, UserData
-from utility import walk_around_folder
+from utility import walk_around_folder, trim_path
 
 
 class JsonSaveLoader(BaseSaveLoader):
@@ -99,6 +99,6 @@ class JsonSaveLoader(BaseSaveLoader):
         '''
         Returns: list of stored users
         '''
-        path, folders, files = walk_around_folder(self.__json_config_path.__str__(), as_str=False)
+        path, folders, files = walk_around_folder(self.__json_config_path.__str__(), as_str=False, trimmed_path=None)
         users_list = 'Stored users:\n' + reduce(lambda x, y: f'{x}\n{y}', files)
         return users_list

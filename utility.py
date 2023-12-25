@@ -56,4 +56,4 @@ def is_allowed(path: Path, avaliable_path: List[str]) -> bool:
 
 
 def trim_path(path: str, user_home_folder: str):
-    return f'../' + path[len(user_home_folder):]
+    return f'..' + path[len(user_home_folder):]
